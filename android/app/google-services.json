@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "608188911214",
+    "project_id": "cmsc4303-noahs-lesson3part1",
+    "storage_bucket": "cmsc4303-noahs-lesson3part1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608188911214:android:0ec99639f78c7afeb3607f",
+        "android_client_info": {
+          "package_name": "com.gmail.noahstinson19.map.lesson3part1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608188911214-386cduh9bib9lapqrk5qbskqblkhog0v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgoFrb0Im5WByl8n9rBcEqTrU8_y_RY_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608188911214-386cduh9bib9lapqrk5qbskqblkhog0v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
