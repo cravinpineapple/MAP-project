@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+
+import 'myview/mydialog.dart';
 
 class AddPhotoMemoScreen extends StatefulWidget {
   static const routeName = '/addPhotoMemoScreen';
@@ -18,6 +21,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   _Controller con;
   User user;
+  File photo;
 
   @override
   void initState() {
@@ -31,7 +35,6 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
-    File photo;
 
     return Scaffold(
       appBar: AppBar(
@@ -48,17 +51,51 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Container(
-                height: MediaQuery.of(context).size.height * 0.4,
-                child: photo == null
-                    ? Icon(
-                        Icons.photo_library,
-                        size: 300.0,
-                      )
-                    : Image.file(
-                        photo,
-                        fit: BoxFit.fill,
+              Stack(
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.4,
+                    child: photo == null
+                        ? Icon(
+                            Icons.photo_library,
+                            size: 300.0,
+                          )
+                        : Image.file(
+                            photo,
+                            fit: BoxFit.fill,
+                          ),
+                  ),
+                  Positioned(
+                    right: 0.0,
+                    bottom: 0.0,
+                    child: Container(
+                      color: Colors.blue[200],
+                      child: PopupMenuButton<String>(
+                        onSelected: con.getPhoto,
+                        itemBuilder: (context) => <PopupMenuEntry<String>>[
+                          PopupMenuItem(
+                            value: Constant.SRC_CAMERA,
+                            child: Row(
+                              children: [
+                                Icon(Icons.photo_camera),
+                                Text(Constant.SRC_CAMERA),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: Constant.SRC_GALLERY,
+                            child: Row(
+                              children: [
+                                Icon(Icons.photo_album),
+                                Text(Constant.SRC_GALLERY),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                  ),
+                ],
               ),
               TextFormField(
                 decoration: InputDecoration(
@@ -112,6 +149,32 @@ class _Controller {
     print('======= ${tempMemo.sharedWith}');
   }
 
+  void getPhoto(String src) async {
+    try {
+      PickedFile _imageFile;
+      var _picker = ImagePicker();
+
+      // if coming from camera
+      if (src == Constant.SRC_CAMERA) {
+        _imageFile = await _picker.getImage(source: ImageSource.camera);
+      }
+      // if coming from gallery
+      else {
+        _imageFile = await _picker.getImage(source: ImageSource.gallery);
+      }
+
+      if (_imageFile == null)
+        return; // selection from camera/gallery was canceled
+      state.render(() => state.photo = File(_imageFile.path));
+    } catch (e) {
+      MyDialog.info(
+        context: state.context,
+        title: 'Failed to get picutre',
+        content: '$e',
+      );
+    }
+  }
+
   void saveTitle(String value) {
     tempMemo.title = value;
   }
@@ -122,7 +185,8 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith =
+          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }
