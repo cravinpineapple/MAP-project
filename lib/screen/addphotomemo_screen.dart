@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 
+import '../controller/firebasecontroller.dart';
+import 'myview/mydialog.dart';
 import 'myview/mydialog.dart';
 
 class AddPhotoMemoScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   _Controller con;
   User user;
   File photo;
+  String progressMessage;
 
   @override
   void initState() {
@@ -97,6 +100,10 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
                   ),
                 ],
               ),
+              progressMessage == null
+                  ? SizedBox(height: 1.0)
+                  : Text(progressMessage,
+                      style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -138,7 +145,7 @@ class _Controller {
   _Controller(this.state);
   PhotoMemo tempMemo = PhotoMemo();
 
-  void save() {
+  void save() async {
     if (!state.formKey.currentState.validate()) return;
 
     // now validated
@@ -147,6 +154,32 @@ class _Controller {
     print('======= ${tempMemo.title}');
     print('======= ${tempMemo.memo}');
     print('======= ${tempMemo.sharedWith}');
+
+    MyDialog.circularProggressStart(state.context);
+
+    try {
+      Map photoInfo = await FirebaseController.uploadPhotoFile(
+        photo: state.photo,
+        uid: state.user.uid,
+        listener: (double progress) {
+          state.render(() {
+            if (progress == null)
+              state.progressMessage = null;
+            else {
+              progress *= 100;
+              state.progressMessage =
+                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
+            }
+          });
+        },
+      );
+      MyDialog.circularProgressStop(state.context);
+      print('=========== fileName: ${photoInfo[Constant.ARG_FILENAME]}');
+      print('=========== fileName: ${photoInfo[Constant.ARG_DOWNLOADURL]}');
+    } catch (e) {
+      MyDialog.circularProgressStop(state.context);
+      print('=========== $e');
+    }
   }
 
   void getPhoto(String src) async {
