@@ -42,7 +42,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Photomom'),
+        title: Text('Add Photomemo'),
         actions: [
           IconButton(
             icon: Icon(Icons.check),

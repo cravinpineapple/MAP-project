@@ -63,7 +63,7 @@ class _UserHomeState extends State<UserHomeScreen> {
         ),
         body: photoMemoList.length == 0
             ? Text(
-                'No PhtoMemos Found',
+                'No PhotoMemos Found',
                 style: Theme.of(context).textTheme.headline5,
               )
             : ListView.builder(
