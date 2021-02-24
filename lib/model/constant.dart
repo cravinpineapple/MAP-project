@@ -3,6 +3,7 @@ class Constant {
 
   static const ARG_USER = 'user';
   static const ARG_PHOTOMEMOLIST = 'photomemolist';
+  static const ARG_ONE_PHOTOMEMO = 'one_photomemo';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';

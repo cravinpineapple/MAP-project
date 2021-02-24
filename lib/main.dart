@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/signin_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
+import 'package:lesson3part1/screen/detailedview_screen.dart';
 
 import 'model/constant.dart';
 
@@ -23,6 +24,7 @@ class Lesson3Part1App extends StatelessWidget {
         SignInScreen.routeName: (context) => SignInScreen(),
         UserHomeScreen.routeName: (context) => UserHomeScreen(),
         AddPhotoMemoScreen.routeName: (context) => AddPhotoMemoScreen(),
+        DetailedViewScreen.routeName: (context) => DetailedViewScreen(),
       },
     );
   }
