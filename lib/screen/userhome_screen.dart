@@ -3,7 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
+import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
+
+import 'myview/myimage.dart';
 
 class UserHomeScreen extends StatefulWidget {
   static const routeName = '/userHomeScreen';
@@ -16,6 +19,7 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeState extends State<UserHomeScreen> {
   _Controller con;
   User user;
+  List<PhotoMemo> photoMemoList;
 
   @override
   void initState() {
@@ -29,6 +33,7 @@ class _UserHomeState extends State<UserHomeScreen> {
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
+    photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
 
     return WillPopScope(
       onWillPop: () => Future.value(false), // disables android system back button
@@ -55,7 +60,34 @@ class _UserHomeState extends State<UserHomeScreen> {
           child: Icon(Icons.add),
           onPressed: con.addButton,
         ),
-        body: Text('UserHome for ${user.email}'),
+        body: photoMemoList.length == 0
+            ? Text(
+                'No PhtoMemos Found',
+                style: Theme.of(context).textTheme.headline5,
+              )
+            : ListView.builder(
+                itemCount: photoMemoList.length,
+                itemBuilder: (BuildContext context, int index) => ListTile(
+                  leading: MyImage.network(
+                    url: photoMemoList[index].photoURL,
+                    context: context,
+                  ),
+                  title: Text(photoMemoList[index].title),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        photoMemoList[index].memo.length >= 20
+                            ? photoMemoList[index].memo.substring(0, 20) + '...'
+                            : photoMemoList[index].memo,
+                      ),
+                      Text('Created By: ${photoMemoList[index].createdBy}'),
+                      Text('Shared With: ${photoMemoList[index].sharedWith}'),
+                      Text('Updated At: ${photoMemoList[index].timestamp}'),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -77,7 +109,15 @@ class _Controller {
   }
 
   void addButton() async {
-    await Navigator.pushNamed(state.context, AddPhotoMemoScreen.routeName,
-        arguments: {Constant.ARG_USER: state.user});
+    await Navigator.pushNamed(
+      state.context,
+      AddPhotoMemoScreen.routeName,
+      arguments: {
+        Constant.ARG_USER: state.user,
+        Constant.ARG_PHOTOMEMOLIST: state.photoMemoList,
+      },
+    );
+
+    state.render(() {}); // rerender the screen
   }
 }

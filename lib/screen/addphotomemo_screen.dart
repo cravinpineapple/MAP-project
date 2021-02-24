@@ -8,7 +8,6 @@ import 'package:lesson3part1/model/photomemo.dart';
 
 import '../controller/firebasecontroller.dart';
 import 'myview/mydialog.dart';
-import 'myview/mydialog.dart';
 
 class AddPhotoMemoScreen extends StatefulWidget {
   static const routeName = '/addPhotoMemoScreen';
@@ -23,6 +22,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   _Controller con;
   User user;
+  List<PhotoMemo> photoMemoList;
   File photo;
   String progressMessage;
 
@@ -38,6 +38,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
+    photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
 
     return Scaffold(
       appBar: AppBar(
@@ -102,8 +103,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage,
-                      style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -151,10 +151,6 @@ class _Controller {
     // now validated
     state.formKey.currentState.save();
 
-    print('======= ${tempMemo.title}');
-    print('======= ${tempMemo.memo}');
-    print('======= ${tempMemo.sharedWith}');
-
     MyDialog.circularProggressStart(state.context);
 
     try {
@@ -167,17 +163,36 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage =
-                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
       );
+
+      // image labels by ML
+      state.render(() => state.progressMessage = 'ML Image Labeler Started');
+      List<String> imageLabels =
+          await FirebaseController.getImageLabels(photoFile: state.photo);
+      state.render(() => state.progressMessage = null);
+
+      tempMemo.photoFilename = photoInfo[Constant.ARG_FILENAME];
+      tempMemo.photoURL = photoInfo[Constant.ARG_DOWNLOADURL];
+      tempMemo.timestamp = DateTime.now();
+      tempMemo.createdBy = state.user.email;
+      tempMemo.imageLabels = imageLabels;
+      String docID = await FirebaseController.addPhotoMemo(tempMemo);
+      tempMemo.docID = docID;
+      state.photoMemoList.insert(0, tempMemo);
+
       MyDialog.circularProgressStop(state.context);
-      print('=========== fileName: ${photoInfo[Constant.ARG_FILENAME]}');
-      print('=========== fileName: ${photoInfo[Constant.ARG_DOWNLOADURL]}');
+      Navigator.pop(state.context); // return to user home screen
     } catch (e) {
       MyDialog.circularProgressStop(state.context);
+      MyDialog.info(
+        context: state.context,
+        title: 'Save Photo Memo Error',
+        content: e,
+      );
       print('=========== $e');
     }
   }
@@ -196,8 +211,7 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null)
-        return; // selection from camera/gallery was canceled
+      if (_imageFile == null) return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -218,8 +232,7 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith =
-          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }
