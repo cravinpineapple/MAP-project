@@ -19,7 +19,8 @@ class DetailedViewScreen extends StatefulWidget {
 class _DetailedViewState extends State<DetailedViewScreen> {
   _Controller con;
   User user;
-  PhotoMemo onePhotoMemo;
+  PhotoMemo onePhotoMemoOriginal;
+  PhotoMemo onePhotoMemoTemp;
   bool editMode = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -35,7 +36,8 @@ class _DetailedViewState extends State<DetailedViewScreen> {
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
-    onePhotoMemo ??= args[Constant.ARG_ONE_PHOTOMEMO];
+    onePhotoMemoOriginal ??= args[Constant.ARG_ONE_PHOTOMEMO];
+    onePhotoMemoTemp ??= PhotoMemo.clone(onePhotoMemoOriginal);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +60,7 @@ class _DetailedViewState extends State<DetailedViewScreen> {
                     child: con.photoFile == null
                         ? MyImage.network(
                             context: context,
-                            url: onePhotoMemo.photoURL,
+                            url: onePhotoMemoTemp.photoURL,
                           )
                         : Image.file(
                             con.photoFile,
@@ -105,34 +107,34 @@ class _DetailedViewState extends State<DetailedViewScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter Title',
                 ),
-                initialValue: onePhotoMemo.title,
+                initialValue: onePhotoMemoTemp.title,
                 autocorrect: true,
                 validator: PhotoMemo.validateTitle,
-                onSaved: null,
+                onSaved: con.saveTitle,
               ),
               TextFormField(
                 enabled: editMode,
                 decoration: InputDecoration(
                   hintText: 'Enter Memo',
                 ),
-                initialValue: onePhotoMemo.memo,
+                initialValue: onePhotoMemoTemp.memo,
                 autocorrect: true,
                 keyboardType: TextInputType.multiline,
                 maxLines: 6,
                 validator: PhotoMemo.validateMemo,
-                onSaved: null,
+                onSaved: con.saveMemo,
               ),
               TextFormField(
                 enabled: editMode,
                 decoration: InputDecoration(
                   hintText: 'Enter Shared With',
                 ),
-                initialValue: onePhotoMemo.sharedWith.join(','),
+                initialValue: onePhotoMemoTemp.sharedWith.join(','),
                 autocorrect: false,
                 keyboardType: TextInputType.multiline,
                 maxLines: 2,
                 validator: PhotoMemo.validateSharedWith,
-                onSaved: null,
+                onSaved: con.saveSharedWith,
               ),
               SizedBox(
                 height: 5.0,
@@ -142,7 +144,7 @@ class _DetailedViewState extends State<DetailedViewScreen> {
                       style: Theme.of(context).textTheme.bodyText1)
                   : SizedBox(height: 1.0),
               Constant.DEV
-                  ? Text(onePhotoMemo.imageLabels.join(' | '))
+                  ? Text(onePhotoMemoTemp.imageLabels.join(' | '))
                   : SizedBox(height: 1.0),
             ],
           ),
@@ -159,7 +161,11 @@ class _Controller {
   File photoFile; // camera or gallery
 
   void update() {
-    state.render(() => state.editMode = false);
+    if (!state.formKey.currentState.validate()) return;
+
+    state.formKey.currentState.save();
+
+    // state.render(() => state.editMode = false);
   }
 
   void edit() {
@@ -167,4 +173,19 @@ class _Controller {
   }
 
   void getPhoto(String src) {}
+
+  void saveTitle(String value) {
+    state.onePhotoMemoTemp.title = value;
+  }
+
+  void saveMemo(String value) {
+    state.onePhotoMemoTemp.memo = value;
+  }
+
+  void saveSharedWith(String value) {
+    if (value.trim().length != 0) {
+      state.onePhotoMemoTemp.sharedWith =
+          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    }
+  }
 }
