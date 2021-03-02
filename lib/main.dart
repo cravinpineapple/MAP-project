@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/signin_screen.dart';
+import 'package:lesson3part1/screen/signup_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
 
@@ -20,11 +21,16 @@ class Lesson3Part1App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: Constant.DEV,
       initialRoute: SignInScreen.routeName,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.lightBlue[200],
+      ),
       routes: {
         SignInScreen.routeName: (context) => SignInScreen(),
         UserHomeScreen.routeName: (context) => UserHomeScreen(),
         AddPhotoMemoScreen.routeName: (context) => AddPhotoMemoScreen(),
         DetailedViewScreen.routeName: (context) => DetailedViewScreen(),
+        SignUpScreen.routeName: (context) => SignUpScreen(),
       },
     );
   }

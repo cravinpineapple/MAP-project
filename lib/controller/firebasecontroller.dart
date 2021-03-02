@@ -24,6 +24,14 @@ class FirebaseController {
     await FirebaseAuth.instance.signOut();
   }
 
+  static Future<void> createAccount(
+      {@required String email, @required String password}) async {
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
   static Future<Map<String, String>> uploadPhotoFile({
     @required File photo,
     String fileName,
