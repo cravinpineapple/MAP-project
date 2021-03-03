@@ -6,6 +6,8 @@ import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
+import 'package:lesson3part1/screen/myview/mydialog.dart';
+import 'package:lesson3part1/screen/sharedwith_screen.dart';
 
 import 'myview/myimage.dart';
 
@@ -50,10 +52,15 @@ class _UserHomeState extends State<UserHomeScreen> {
                 accountEmail: Text(user.email),
               ),
               ListTile(
+                leading: Icon(Icons.people),
+                title: Text('Shared With Me'),
+                onTap: con.sharedWithMe,
+              ),
+              ListTile(
                 leading: Icon(Icons.exit_to_app),
                 title: Text('Sign Out'),
                 onTap: con.signOut,
-              )
+              ),
             ],
           ),
         ),
@@ -123,8 +130,8 @@ class _Controller {
     state.render(() {}); // rerender the screen
   }
 
-  void onTap(int index) {
-    Navigator.pushNamed(
+  void onTap(int index) async {
+    await Navigator.pushNamed(
       state.context,
       DetailedViewScreen.routeName,
       arguments: {
@@ -132,5 +139,25 @@ class _Controller {
         Constant.ARG_ONE_PHOTOMEMO: state.photoMemoList[index],
       },
     );
+
+    state.render(() {});
+  }
+
+  void sharedWithMe() async {
+    try {
+      List<PhotoMemo> photoMemoList =
+          await FirebaseController.getPhotoMemoList(email: state.user.email);
+
+      await Navigator.pushNamed(state.context, SharedWithScreen.routeName, arguments: {
+        Constant.ARG_USER: state.user,
+        Constant.ARG_PHOTOMEMOLIST:
+            photoMemoList, // list of shared with email we retrieved
+      });
+
+      Navigator.pop(state.context); // closes the drawer
+    } catch (e) {
+      MyDialog.info(
+          context: state.context, title: 'Get Shared PhotoMemo Error', content: '$e');
+    }
   }
 }

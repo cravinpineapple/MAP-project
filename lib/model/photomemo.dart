@@ -53,6 +53,25 @@ class PhotoMemo {
     this.imageLabels.addAll(p.imageLabels);
   }
 
+  // a = b ==> a.assign(b) (achieves memberwise assignment)
+  void assign(PhotoMemo p) {
+    // direct copy okay
+    this.docID = p.docID;
+    this.createdBy = p.docID;
+    this.memo = p.memo;
+    this.title = p.title;
+    this.photoFilename = p.photoFilename;
+    this.photoURL = p.photoURL;
+    this.timestamp = p.timestamp;
+
+    // deep copy needed because sharedWith and imageLabels are
+    //    references to a list
+    this.sharedWith.clear();
+    this.sharedWith.addAll(p.sharedWith);
+    this.imageLabels.clear();
+    this.imageLabels.addAll(p.imageLabels);
+  }
+
   // converts dart object (instance of class) to compatible Firestore document
   Map<String, dynamic> serialize() {
     return <String, dynamic>{

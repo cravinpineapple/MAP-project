@@ -76,12 +76,12 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<String>> getImageLabels({@required File photoFile}) async {
+  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
     final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
     final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
     final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
 
-    List<String> labels = <String>[];
+    List<dynamic> labels = <dynamic>[];
 
     for (ImageLabel label in cloudLabels) {
       if (label.confidence >= Constant.MIN_ML_CONFIDENCE)
@@ -89,5 +89,29 @@ class FirebaseController {
     }
 
     return labels;
+  }
+
+  static Future<void> updatePhotoMemo(
+      String docID, Map<String, dynamic> updateInfo) async {
+    await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(docID)
+        .update(updateInfo);
+  }
+
+  static Future<List<PhotoMemo>> getPhotoMemoSharedWithMe(
+      {@required String email}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .where(PhotoMemo.SHARED_WITH.contains(email))
+        .orderBy(PhotoMemo.TIMESTAMP, descending: true)
+        .get();
+
+    var result = <PhotoMemo>[];
+    querySnapshot.docs.forEach((doc) {
+      result.add(PhotoMemo.deserialize(doc.data(), doc.id));
+    });
+
+    return result;
   }
 }

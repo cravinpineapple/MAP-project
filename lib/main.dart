@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
+import 'package:lesson3part1/screen/sharedwith_screen.dart';
 import 'package:lesson3part1/screen/signin_screen.dart';
 import 'package:lesson3part1/screen/signup_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
@@ -31,6 +32,7 @@ class Lesson3Part1App extends StatelessWidget {
         AddPhotoMemoScreen.routeName: (context) => AddPhotoMemoScreen(),
         DetailedViewScreen.routeName: (context) => DetailedViewScreen(),
         SignUpScreen.routeName: (context) => SignUpScreen(),
+        SharedWithScreen.routeName: (context) => SharedWithScreen(),
       },
     );
   }
