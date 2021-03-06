@@ -87,6 +87,10 @@ class _UserHomeState extends State<UserHomeScreen> {
           child: ListView(
             children: [
               UserAccountsDrawerHeader(
+                currentAccountPicture: Icon(
+                  Icons.person,
+                  size: 100.0,
+                ),
                 accountName: Text(user.displayName ?? 'N / A'),
                 accountEmail: Text(user.email),
               ),
@@ -94,6 +98,11 @@ class _UserHomeState extends State<UserHomeScreen> {
                 leading: Icon(Icons.people),
                 title: Text('Shared With Me'),
                 onTap: con.sharedWithMe,
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text('Settings'),
+                onTap: null, // con.settings,
               ),
               ListTile(
                 leading: Icon(Icons.exit_to_app),
@@ -123,6 +132,7 @@ class _UserHomeState extends State<UserHomeScreen> {
                       url: photoMemoList[index].photoURL,
                       context: context,
                     ),
+                    trailing: Icon(Icons.keyboard_arrow_right),
                     title: Text(photoMemoList[index].title),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +254,7 @@ class _Controller {
     keyString = value;
   }
 
-  void search() {
+  void search() async {
     state.formKey.currentState.save();
 
     var keys = keyString.split(',').toList();
@@ -254,6 +264,22 @@ class _Controller {
       if (k.trim().isNotEmpty) searchKeys.add(k.trim().toLowerCase());
     }
 
-    print('$searchKeys');
+    try {
+      List<PhotoMemo> results;
+
+      if (searchKeys.isNotEmpty) {
+        results = await FirebaseController.searchImage(
+          createdBy: state.user.email,
+          searchLabels: searchKeys,
+        );
+      } else {
+        results =
+            await FirebaseController.getPhotoMemoList(email: state.user.email);
+      }
+      state.render(() => state.photoMemoList = results);
+    } catch (e) {
+      MyDialog.info(
+          context: state.context, title: 'Search Error', content: '$e');
+    }
   }
 }
