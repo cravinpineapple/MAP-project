@@ -9,6 +9,7 @@ import 'package:lesson3part1/screen/detailedview_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
 
+import '../controller/firebasecontroller.dart';
 import 'myview/myimage.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _UserHomeState extends State<UserHomeScreen> {
   _Controller con;
   User user;
   List<PhotoMemo> photoMemoList;
+  GlobalKey<FormState> formKey = new GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -39,10 +41,47 @@ class _UserHomeState extends State<UserHomeScreen> {
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
 
     return WillPopScope(
-      onWillPop: () => Future.value(false), // disables android system back button
+      onWillPop: () =>
+          Future.value(false), // disables android system back button
       child: Scaffold(
         appBar: AppBar(
-          title: Text('User Home'),
+          // title: Text('User Home'),
+          actions: [
+            con.deleteIndex != null
+                ? IconButton(
+                    icon: Icon(Icons.cancel),
+                    onPressed: con.cancelDelete,
+                  )
+                : Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.7,
+                      child: Form(
+                        key: formKey,
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            fillColor: Theme.of(context).backgroundColor,
+                            filled: true,
+                          ),
+                          autocorrect: true,
+                          onSaved: con.saveSearchKeyString,
+                        ),
+                      ),
+                    ),
+                  ),
+            con.deleteIndex != null
+                ? IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: con.delete,
+                  )
+                : IconButton(
+                    icon: Icon(
+                      Icons.search,
+                    ),
+                    onPressed: con.search,
+                  ),
+          ],
         ),
         drawer: Drawer(
           child: ListView(
@@ -75,26 +114,33 @@ class _UserHomeState extends State<UserHomeScreen> {
               )
             : ListView.builder(
                 itemCount: photoMemoList.length,
-                itemBuilder: (BuildContext context, int index) => ListTile(
-                  leading: MyImage.network(
-                    url: photoMemoList[index].photoURL,
-                    context: context,
+                itemBuilder: (BuildContext context, int index) => Container(
+                  color: con.deleteIndex != null && con.deleteIndex == index
+                      ? Theme.of(context).highlightColor
+                      : Theme.of(context).scaffoldBackgroundColor,
+                  child: ListTile(
+                    leading: MyImage.network(
+                      url: photoMemoList[index].photoURL,
+                      context: context,
+                    ),
+                    title: Text(photoMemoList[index].title),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          photoMemoList[index].memo.length >= 20
+                              ? photoMemoList[index].memo.substring(0, 20) +
+                                  '...'
+                              : photoMemoList[index].memo,
+                        ),
+                        Text('Created By: ${photoMemoList[index].createdBy}'),
+                        Text('Shared With: ${photoMemoList[index].sharedWith}'),
+                        Text('Updated At: ${photoMemoList[index].timestamp}'),
+                      ],
+                    ),
+                    onTap: () => con.onTap(index),
+                    onLongPress: () => con.onLongPress(index),
                   ),
-                  title: Text(photoMemoList[index].title),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        photoMemoList[index].memo.length >= 20
-                            ? photoMemoList[index].memo.substring(0, 20) + '...'
-                            : photoMemoList[index].memo,
-                      ),
-                      Text('Created By: ${photoMemoList[index].createdBy}'),
-                      Text('Shared With: ${photoMemoList[index].sharedWith}'),
-                      Text('Updated At: ${photoMemoList[index].timestamp}'),
-                    ],
-                  ),
-                  onTap: () => con.onTap(index),
                 ),
               ),
       ),
@@ -105,6 +151,8 @@ class _UserHomeState extends State<UserHomeScreen> {
 class _Controller {
   _UserHomeState state;
   _Controller(this.state);
+  int deleteIndex;
+  String keyString;
 
   void signOut() async {
     try {
@@ -131,6 +179,7 @@ class _Controller {
   }
 
   void onTap(int index) async {
+    if (deleteIndex != null) return;
     await Navigator.pushNamed(
       state.context,
       DetailedViewScreen.routeName,
@@ -146,18 +195,65 @@ class _Controller {
   void sharedWithMe() async {
     try {
       List<PhotoMemo> photoMemoList =
-          await FirebaseController.getPhotoMemoList(email: state.user.email);
+          await FirebaseController.getPhotoMemoSharedWithMe(
+              email: state.user.email);
 
-      await Navigator.pushNamed(state.context, SharedWithScreen.routeName, arguments: {
-        Constant.ARG_USER: state.user,
-        Constant.ARG_PHOTOMEMOLIST:
-            photoMemoList, // list of shared with email we retrieved
-      });
+      await Navigator.pushNamed(state.context, SharedWithScreen.routeName,
+          arguments: {
+            Constant.ARG_USER: state.user,
+            Constant.ARG_PHOTOMEMOLIST:
+                photoMemoList, // list of shared with email we retrieved
+          });
 
       Navigator.pop(state.context); // closes the drawer
     } catch (e) {
       MyDialog.info(
-          context: state.context, title: 'Get Shared PhotoMemo Error', content: '$e');
+          context: state.context,
+          title: 'Get Shared PhotoMemo Error',
+          content: '$e');
     }
+  }
+
+  void onLongPress(int index) {
+    if (deleteIndex != null) return;
+    state.render(() => deleteIndex = index);
+  }
+
+  void cancelDelete() {
+    state.render(() => deleteIndex = null);
+  }
+
+  void delete() async {
+    try {
+      PhotoMemo p = state.photoMemoList[deleteIndex];
+      FirebaseController.deletePhotoMemo(p);
+
+      state.render(() {
+        state.photoMemoList.removeAt(deleteIndex);
+        deleteIndex = null;
+      });
+    } catch (e) {
+      MyDialog.info(
+          context: state.context,
+          title: 'Delete PhotoMemo Error',
+          content: '$e');
+    }
+  }
+
+  void saveSearchKeyString(String value) {
+    keyString = value;
+  }
+
+  void search() {
+    state.formKey.currentState.save();
+
+    var keys = keyString.split(',').toList();
+    List<String> searchKeys = [];
+
+    for (var k in keys) {
+      if (k.trim().isNotEmpty) searchKeys.add(k.trim().toLowerCase());
+    }
+
+    print('$searchKeys');
   }
 }

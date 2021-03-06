@@ -10,7 +10,8 @@ import 'package:lesson3part1/model/photomemo.dart';
 import '../model/constant.dart';
 
 class FirebaseController {
-  static Future<User> signIn({@required String email, @required String password}) async {
+  static Future<User> signIn(
+      {@required String email, @required String password}) async {
     UserCredential userCredential =
         await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -46,7 +47,8 @@ class FirebaseController {
       listener(progress);
     });
     await task;
-    String downloadURL = await FirebaseStorage.instance.ref(fileName).getDownloadURL();
+    String downloadURL =
+        await FirebaseStorage.instance.ref(fileName).getDownloadURL();
     return <String, String>{
       Constant.ARG_DOWNLOADURL: downloadURL,
       Constant.ARG_FILENAME: fileName,
@@ -61,7 +63,8 @@ class FirebaseController {
     return ref.id;
   }
 
-  static Future<List<PhotoMemo>> getPhotoMemoList({@required String email}) async {
+  static Future<List<PhotoMemo>> getPhotoMemoList(
+      {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.CREATED_BY, isEqualTo: email)
@@ -76,10 +79,14 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
-    final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
-    final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
-    final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
+  static Future<List<dynamic>> getImageLabels(
+      {@required File photoFile}) async {
+    final FirebaseVisionImage visionImage =
+        FirebaseVisionImage.fromFile(photoFile);
+    final ImageLabeler cloudLabeler =
+        FirebaseVision.instance.cloudImageLabeler();
+    final List<ImageLabel> cloudLabels =
+        await cloudLabeler.processImage(visionImage);
 
     List<dynamic> labels = <dynamic>[];
 
@@ -103,7 +110,7 @@ class FirebaseController {
       {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
-        .where(PhotoMemo.SHARED_WITH.contains(email))
+        .where(PhotoMemo.SHARED_WITH, arrayContains: email)
         .orderBy(PhotoMemo.TIMESTAMP, descending: true)
         .get();
 
@@ -113,5 +120,13 @@ class FirebaseController {
     });
 
     return result;
+  }
+
+  static Future<void> deletePhotoMemo(PhotoMemo p) async {
+    await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(p.docID)
+        .delete();
+    await FirebaseStorage.instance.ref(p.photoFilename).delete();
   }
 }
