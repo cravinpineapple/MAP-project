@@ -5,6 +5,7 @@ class PhotoMemo {
   String memo;
   String photoFilename; // stored at Storage
   String photoURL;
+  String roomName;
   DateTime timestamp;
   List<dynamic>
       sharedWith; // list of emails (dynamic gives better compatibility with Firestore)
@@ -19,10 +20,12 @@ class PhotoMemo {
   static const TIMESTAMP = 'timestamp';
   static const SHARED_WITH = 'sharedWith';
   static const IMAGE_LABELS = 'imageLabels';
+  static const ROOM_NAME = 'roomName';
 
   PhotoMemo({
     this.docID,
     this.createdBy,
+    this.roomName,
     this.memo,
     this.title,
     this.photoFilename,
@@ -77,6 +80,7 @@ class PhotoMemo {
     return <String, dynamic>{
       TITLE: this.title,
       CREATED_BY: this.createdBy,
+      ROOM_NAME: this.roomName,
       MEMO: this.memo,
       PHOTO_FILENAME: this.photoFilename,
       PHOTO_URL: this.photoURL,
@@ -91,6 +95,7 @@ class PhotoMemo {
     return PhotoMemo(
       docID: docID,
       createdBy: doc[CREATED_BY],
+      roomName: doc[ROOM_NAME],
       title: doc[TITLE],
       memo: doc[MEMO],
       photoFilename: doc[PHOTO_FILENAME],
@@ -99,7 +104,8 @@ class PhotoMemo {
       imageLabels: doc[IMAGE_LABELS],
       timestamp: doc[TIMESTAMP] == null
           ? null
-          : DateTime.fromMillisecondsSinceEpoch(doc[TIMESTAMP].millisecondsSinceEpoch),
+          : DateTime.fromMillisecondsSinceEpoch(
+              doc[TIMESTAMP].millisecondsSinceEpoch),
     );
   }
 
@@ -122,7 +128,8 @@ class PhotoMemo {
     if (value == null || value.trim().length == 0) return null;
 
     // sharing with people
-    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    List<String> emailList =
+        value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     for (String email in emailList) {
       if (email.contains('@') && email.contains('.'))
         continue;

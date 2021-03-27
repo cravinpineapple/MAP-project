@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+import 'package:lesson3part1/model/room.dart';
 
 import '../model/constant.dart';
 
@@ -63,6 +64,14 @@ class FirebaseController {
     return ref.id;
   }
 
+  static Future<String> addRoom(Room room) async {
+    var ref = await FirebaseFirestore.instance
+        .collection(Constant.ROOM_COLLECTION)
+        .add(room.serialize());
+
+    return ref.id;
+  }
+
   static Future<List<PhotoMemo>> getPhotoMemoList(
       {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -74,6 +83,42 @@ class FirebaseController {
     var result = <PhotoMemo>[];
     querySnapshot.docs.forEach((doc) {
       result.add(PhotoMemo.deserialize(doc.data(), doc.id));
+    });
+
+    return result;
+  }
+
+  static Future<List<PhotoMemo>> getRoomPhotoMemoList(
+      {@required String roomName}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .where(PhotoMemo.ROOM_NAME, isEqualTo: roomName)
+        .orderBy(PhotoMemo.TIMESTAMP, descending: false)
+        .get();
+
+    var result = <PhotoMemo>[];
+    querySnapshot.docs.forEach((doc) {
+      result.add(PhotoMemo.deserialize(doc.data(), doc.id));
+    });
+
+    return result;
+  }
+
+  static Future<List<Room>> getRoomList({@required String email}) async {
+    print(email);
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.ROOM_COLLECTION)
+        .where(Room.MEMBERS, arrayContains: email)
+        .orderBy(Room.ROOM_NAME, descending: true)
+        .get();
+
+    print('docs');
+    print(querySnapshot.docs);
+
+    var result = <Room>[];
+    querySnapshot.docs.forEach((doc) {
+      result.add(Room.deserialize(doc.data(), doc.id));
     });
 
     return result;

@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
+import 'package:lesson3part1/screen/myview/myroomlist.dart';
 
+import '../controller/firebasecontroller.dart';
+import '../controller/firebasecontroller.dart';
 import '../controller/firebasecontroller.dart';
 import 'myview/myimage.dart';
 
@@ -24,6 +28,7 @@ class _UserHomeState extends State<UserHomeScreen> {
   _Controller con;
   User user;
   List<PhotoMemo> photoMemoList;
+  List<Room> roomList;
   GlobalKey<FormState> formKey = new GlobalKey<FormState>();
 
   @override
@@ -39,6 +44,9 @@ class _UserHomeState extends State<UserHomeScreen> {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
+    roomList ??= args[Constant.ARG_ROOMLIST];
+
+    print(roomList);
 
     return WillPopScope(
       onWillPop: () =>
@@ -98,6 +106,19 @@ class _UserHomeState extends State<UserHomeScreen> {
                 leading: Icon(Icons.people),
                 title: Text('Shared With Me'),
                 onTap: con.sharedWithMe,
+              ),
+              Divider(
+                height: 50.0,
+                color: Colors.grey[100],
+              ),
+              MyRoomList(roomList: roomList),
+              IconButton(
+                onPressed: con.addRoom,
+                icon: Icon(Icons.add),
+              ),
+              Divider(
+                height: 50.0,
+                color: Colors.grey[100],
               ),
               ListTile(
                 leading: Icon(Icons.settings),
@@ -173,6 +194,136 @@ class _Controller {
 
     Navigator.of(state.context).pop(); // pops drawer
     Navigator.of(state.context).pop(); // pops UserHome screen
+  }
+
+  void addRoom() async {
+    GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    String roomName;
+    String members;
+    List<dynamic> membersList = [];
+
+    showDialog(
+      context: state.context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          scrollable: true,
+          backgroundColor: Colors.grey[200],
+          actions: [
+            FlatButton(
+              onPressed: () => Navigator.pop(state.context),
+              color: Colors.grey[800],
+              child: Text(
+                'Cancel',
+                style: TextStyle(fontSize: 15.0, color: Colors.white),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                if (!formKey.currentState.validate()) return;
+
+                formKey.currentState.save();
+
+                if (members.trim().length != 0) {
+                  membersList = members
+                      .split(RegExp('(,| )+'))
+                      .map((e) => e.trim())
+                      .toList();
+                }
+
+                membersList.add(state.user.email);
+
+                Room tempRoom = Room(
+                    roomName: roomName,
+                    members: membersList,
+                    owner: state.user.email);
+
+                FirebaseController.addRoom(tempRoom);
+                state.roomList.add(tempRoom);
+                Navigator.pop(state.context);
+                state.render(() => {});
+                // FirebaseController.addRoom(tempRoom);
+              },
+              color: Colors.grey[800],
+              child: Text(
+                'Add Room',
+                style: TextStyle(fontSize: 15.0, color: Colors.white),
+              ),
+            ),
+          ],
+          content: Form(
+            key: formKey,
+            child: Column(
+              children: [
+                Text(
+                  'Add New Room',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[800],
+                    fontSize: 25.0,
+                  ),
+                ),
+                SizedBox(
+                  width: 200.0,
+                  child: Theme(
+                    data: Theme.of(context)
+                        .copyWith(primaryColor: Colors.red[800]),
+                    child: TextFormField(
+                      style: TextStyle(color: Colors.grey[800]),
+                      decoration: InputDecoration(
+                        hintText: 'Room Name',
+                        fillColor: Colors.blue[900],
+                      ),
+                      keyboardType: TextInputType.name,
+                      autocorrect: true,
+                      onSaved: (String value) {
+                        roomName = value;
+                      },
+                      validator: (String value) {
+                        if (value.length < 3)
+                          return 'Room name too short';
+                        else
+                          return null;
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 200.0,
+                  child: Theme(
+                    data: Theme.of(context),
+                    child: TextFormField(
+                      style: TextStyle(color: Colors.grey[800]),
+                      decoration: InputDecoration(
+                        hintText: '1@test.com, 2@test.com',
+                      ),
+                      keyboardType: TextInputType.name,
+                      autocorrect: true,
+                      onSaved: (String value) {
+                        members = value;
+                      },
+                      validator: (String value) {
+                        if ((value.contains('@') && value.contains('.')) ||
+                            value.trim() == "")
+                          return null;
+                        else
+                          return 'invalid email address';
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    // Room tempRoom = Room();
+    // tempRoom.owner = state.user.email;
+    // tempRoom.
+
+    // String docID = FirebaseController.addRoom(tempRoom);
   }
 
   void addButton() async {
