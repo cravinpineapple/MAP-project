@@ -103,7 +103,8 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage,
+                      style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -163,7 +164,8 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage =
+                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
@@ -211,7 +213,8 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null) return; // selection from camera/gallery was canceled
+      if (_imageFile == null)
+        return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -232,7 +235,8 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith =
+          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }

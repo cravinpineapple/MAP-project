@@ -196,7 +196,8 @@ class _Controller {
                   state.progressMessage = null;
                 else {
                   message *= 100;
-                  state.progressMessage = 'Uploading ' + message.toStringAsFixed(1) + '%';
+                  state.progressMessage =
+                      'Uploading ' + message.toStringAsFixed(1) + '%';
                 }
               },
             );
@@ -220,13 +221,14 @@ class _Controller {
       if (state.onePhotoMemoOriginal.memo != state.onePhotoMemoTemp.memo)
         updateInfo[PhotoMemo.MEMO] = state.onePhotoMemoTemp.memo;
 
-      if (!listEquals(
-          state.onePhotoMemoOriginal.sharedWith, state.onePhotoMemoTemp.sharedWith))
+      if (!listEquals(state.onePhotoMemoOriginal.sharedWith,
+          state.onePhotoMemoTemp.sharedWith))
         updateInfo[PhotoMemo.SHARED_WITH] = state.onePhotoMemoTemp.sharedWith;
 
       updateInfo[PhotoMemo.TIMESTAMP] = DateTime.now();
 
-      await FirebaseController.updatePhotoMemo(state.onePhotoMemoTemp.docID, updateInfo);
+      await FirebaseController.updatePhotoMemo(
+          state.onePhotoMemoTemp.docID, updateInfo);
 
       state.onePhotoMemoOriginal.assign(state.onePhotoMemoTemp);
 
@@ -238,7 +240,9 @@ class _Controller {
     } catch (e) {
       MyDialog.circularProgressStop(state.context);
       MyDialog.info(
-          context: state.context, title: 'Update PhotoMemo Error', content: '$e');
+          context: state.context,
+          title: 'Update PhotoMemo Error',
+          content: '$e');
     }
   }
 
@@ -259,7 +263,8 @@ class _Controller {
 
       state.render(() => photoFile = File(_photoFile.path));
     } catch (e) {
-      MyDialog.info(context: state.context, title: 'getPhoto error', content: '$e');
+      MyDialog.info(
+          context: state.context, title: 'getPhoto error', content: '$e');
     }
   }
 
