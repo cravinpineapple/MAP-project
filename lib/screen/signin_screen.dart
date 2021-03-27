@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/signup_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
+
+import '../controller/firebasecontroller.dart';
 
 class SignInScreen extends StatefulWidget {
   static const routeName = '/signInScreen';
@@ -155,6 +158,9 @@ class _Controller {
     try {
       List<PhotoMemo> photoMemoList =
           await FirebaseController.getPhotoMemoList(email: user.email);
+      List<Room> roomList =
+          await FirebaseController.getRoomList(email: user.email);
+
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
         state.context,
@@ -162,13 +168,14 @@ class _Controller {
         arguments: {
           Constant.ARG_USER: user,
           Constant.ARG_PHOTOMEMOLIST: photoMemoList,
+          Constant.ARG_ROOMLIST: roomList,
         },
       );
     } catch (e) {
       MyDialog.circularProgressStop(state.context);
       MyDialog.info(
           context: state.context,
-          title: 'Firestore getPhotoMemoList error',
+          title: 'Firestore getPhotoMemoList error OR getRoomListError',
           content: '$e');
     }
   }
