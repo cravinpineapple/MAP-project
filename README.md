@@ -1,6 +1,6 @@
-# lesson3part1
+# memoroom
 
-A new Flutter project.
+Jesse Rankins and Noah Stinson MAP Project
 
 ## Getting Started
 
