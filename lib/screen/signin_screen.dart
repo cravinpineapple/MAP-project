@@ -144,8 +144,8 @@ class _Controller {
       user = await FirebaseController.signIn(email: email, password: password);
       print('============ ${user.email}');
     } catch (e) {
-      MyDialog.circularProgressStop(state
-          .context); // must make sure to stop load symbol in all possible paths
+      MyDialog.circularProgressStop(
+          state.context); // must make sure to stop load symbol in all possible paths
       MyDialog.info(
         context: state.context,
         title: 'Sign In Error',
@@ -158,8 +158,7 @@ class _Controller {
     try {
       List<PhotoMemo> photoMemoList =
           await FirebaseController.getPhotoMemoList(email: user.email);
-      List<Room> roomList =
-          await FirebaseController.getRoomList(email: user.email);
+      List<Room> roomList = await FirebaseController.getRoomList(email: user.email);
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
