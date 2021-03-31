@@ -23,6 +23,7 @@ class MyRoomList extends StatefulWidget {
 }
 
 class _MyRoomListState extends State<MyRoomList> {
+  ScrollController _scrollController;
   List<Room> roomList;
   _Controller con;
   User user;
@@ -33,6 +34,7 @@ class _MyRoomListState extends State<MyRoomList> {
     roomList = widget.roomList;
     user = widget.user;
     con = _Controller(this);
+    _scrollController = ScrollController();
   }
 
   void render(func) {
@@ -42,7 +44,8 @@ class _MyRoomListState extends State<MyRoomList> {
   @override
   Widget build(BuildContext context) {
     return Scrollbar(
-      isAlwaysShown: true,
+      isAlwaysShown: false,
+      // controller: _scrollController,
       child: SingleChildScrollView(
         child: Column(
           children: con.generateRoomList(),
@@ -59,6 +62,7 @@ class _Controller {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   String ownerUpdate = '';
+  List<String> membersUpdate = [];
   Room room;
 
   List<Widget> generateRoomList() {
@@ -66,8 +70,7 @@ class _Controller {
         .map(
           (e) => FlatButton(
             onLongPress: () => roomPrompt(e),
-            onPressed: () => Navigator.pushNamed(
-                state.context, RoomScreen.routeName,
+            onPressed: () => Navigator.pushNamed(state.context, RoomScreen.routeName,
                 arguments: {Constant.ARG_ROOM: e}),
             child: Text(e.roomName),
           ),
@@ -77,7 +80,6 @@ class _Controller {
 
   void roomPrompt(Room e) {
     room = e;
-    print('==== roomPrompt ${room.docID}');
     showDialog(
       context: state.context,
       barrierDismissible: true,
@@ -207,24 +209,22 @@ class _Controller {
     Navigator.pop(state.context);
 
     try {
-      await saveOwner(
-          ownerUpdate); // I DON'T KNOW WHY THE FUCK THIS WORKS LIKE THIS BUT IT DOES
+      await saveOwner(ownerUpdate); // ??
       if (ownerChangeBool) {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList
-                .where((e) => e.roomName == room.roomName)
-                .elementAt(0)
-                .owner = ownerUpdate;
+            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
+                ownerUpdate;
           },
         );
-        changeConfirmationDialog(ownerChangeBool);
+        changeConfirmationDialog(success: ownerChangeBool);
       } else
-        changeConfirmationDialog(ownerChangeBool);
+        changeConfirmationDialog(
+            success: ownerChangeBool, reason: 'New owner does not exist');
     } catch (e) {
       print('============= $e');
-      changeConfirmationDialog(false);
+      changeConfirmationDialog(success: false, reason: '$e');
     }
   }
 
@@ -255,14 +255,112 @@ class _Controller {
     return null;
   }
 
-  void addMembers() {}
+  void addMembers() {
+    showDialog(
+      context: state.context,
+      builder: (context) => AlertDialog(
+        content: Container(
+          height: 230.0,
+          child: Form(
+            key: formKey,
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Add members to ${room.roomName}',
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  SizedBox(height: 20.0),
+                  SizedBox(
+                    child: TextFormField(
+                      autocorrect: false,
+                      decoration: InputDecoration(
+                        hintText: 'EXAMPLE: 1@test.com, 2@test.com',
+                      ),
+                      validator: Room.validateUserList,
+                      onSaved: saveUsers,
+                    ),
+                  ),
+                  SizedBox(height: 60.0),
+                  Row(
+                    children: [
+                      SizedBox(width: 20.0),
+                      RaisedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      SizedBox(width: 34.0),
+                      RaisedButton(
+                        onPressed: submitAddUsers,
+                        child: Text('Submit'),
+                      ),
+                      SizedBox(width: 20.0),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void saveUsers(String value) {
+    membersUpdate = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+  }
+
+  void submitAddUsers() async {
+    if (!formKey.currentState.validate()) return;
+    formKey.currentState.save();
+
+    // NOW WE HAVE THE LIST
+
+    Navigator.pop(state.context);
+    Navigator.pop(state.context);
+
+    try {
+      bool usersExist = true;
+      for (var e in membersUpdate) {
+        usersExist = await FirebaseController.checkIfUserExists(email: e);
+        if (!usersExist) {
+          break;
+        }
+      }
+      if (usersExist) {
+        print('################################### ${room.docID}');
+        room.members.addAll(membersUpdate);
+        FirebaseController.addUsersToRoom(
+          emails: room.members,
+          room: room,
+        );
+        state.render(
+          () {
+            state.roomList
+                .where((e) => e.roomName == room.roomName)
+                .elementAt(0)
+                .members = membersUpdate;
+          },
+        );
+        changeConfirmationDialog(success: true);
+      } else
+        changeConfirmationDialog(
+            success: false, reason: 'One or more users doesn\'t exist');
+    } catch (e) {
+      print('============= $e');
+      changeConfirmationDialog(success: false, reason: '$e');
+    }
+  }
 
   void removeMembers() {}
 
   void leaveRoom() {}
 
-  void changeConfirmationDialog(bool success) {
-    String msg = 'Room Update ' + (success ? 'Success' : 'Failure');
+  void changeConfirmationDialog({
+    @required bool success,
+    String reason = '',
+  }) {
+    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failure:\n') + reason;
 
     showDialog(
       context: state.context,

@@ -41,4 +41,19 @@ class Room {
       owner: doc[OWNER],
     );
   }
+
+  static String validateUserList(String value) {
+    if (value == null || value.trim().length == 0) return null;
+
+    // sharing with people
+    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    for (String email in emailList) {
+      if (email.contains('@') && email.contains('.'))
+        continue;
+      else
+        return 'Comma(,) or space seperated email list';
+    }
+
+    return null;
+  }
 }
