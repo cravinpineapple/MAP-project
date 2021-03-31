@@ -70,8 +70,14 @@ class _Controller {
         .map(
           (e) => FlatButton(
             onLongPress: () => roomPrompt(e),
-            onPressed: () => Navigator.pushNamed(state.context, RoomScreen.routeName,
-                arguments: {Constant.ARG_ROOM: e}),
+            onPressed: () => Navigator.pushNamed(
+              state.context,
+              RoomScreen.routeName,
+              arguments: {
+                Constant.ARG_ROOM: e,
+                Constant.ARG_USER: state.user,
+              },
+            ),
             child: Text(e.roomName),
           ),
         )
@@ -214,8 +220,10 @@ class _Controller {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
-                ownerUpdate;
+            state.roomList
+                .where((e) => e.roomName == room.roomName)
+                .elementAt(0)
+                .owner = ownerUpdate;
           },
         );
         changeConfirmationDialog(success: ownerChangeBool);
@@ -277,8 +285,8 @@ class _Controller {
                       decoration: InputDecoration(
                         hintText: 'EXAMPLE: 1@test.com, 2@test.com',
                       ),
-                      validator: Room.validateUserList,
-                      onSaved: saveUsers,
+                      validator: Room.validateMemberList,
+                      onSaved: saveMembers,
                     ),
                   ),
                   SizedBox(height: 60.0),
@@ -291,7 +299,7 @@ class _Controller {
                       ),
                       SizedBox(width: 34.0),
                       RaisedButton(
-                        onPressed: submitAddUsers,
+                        onPressed: submitAddMembers,
                         child: Text('Submit'),
                       ),
                       SizedBox(width: 20.0),
@@ -306,11 +314,11 @@ class _Controller {
     );
   }
 
-  void saveUsers(String value) {
+  void saveMembers(String value) {
     membersUpdate = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
   }
 
-  void submitAddUsers() async {
+  void submitAddMembers() async {
     if (!formKey.currentState.validate()) return;
     formKey.currentState.save();
 
@@ -330,7 +338,7 @@ class _Controller {
       if (usersExist) {
         print('################################### ${room.docID}');
         room.members.addAll(membersUpdate);
-        FirebaseController.addUsersToRoom(
+        FirebaseController.addMembersToRoom(
           emails: room.members,
           room: room,
         );
@@ -339,7 +347,7 @@ class _Controller {
             state.roomList
                 .where((e) => e.roomName == room.roomName)
                 .elementAt(0)
-                .members = membersUpdate;
+                .members = room.members; //membersUpdate;
           },
         );
         changeConfirmationDialog(success: true);
@@ -352,15 +360,173 @@ class _Controller {
     }
   }
 
-  void removeMembers() {}
+  void submitRemoveMembers() async {
+    if (!formKey.currentState.validate()) return;
+    formKey.currentState.save();
+    // removed members now in memberUpdate list
 
-  void leaveRoom() {}
+    Navigator.pop(state.context);
+    Navigator.pop(state.context);
+
+    try {
+      print('################################### ${room.docID}');
+      print('roomMembersList: ${room.members}');
+      print('memberUpdate: $membersUpdate');
+      for (String m in membersUpdate) {
+        if (m == room.owner) {
+          changeConfirmationDialog(
+              success: false, reason: 'You cannot remove yourself');
+          return;
+        }
+
+        room.members.remove(m);
+      }
+      print('updatedRoomMembersList: ${room.members}');
+
+      FirebaseController.addMembersToRoom(
+        emails: room.members,
+        room: room,
+      );
+      state.render(
+        () {
+          state.roomList
+              .where((e) => e.roomName == room.roomName)
+              .elementAt(0)
+              .members = membersUpdate;
+        },
+      );
+      changeConfirmationDialog(success: true);
+    } catch (e) {
+      changeConfirmationDialog(success: false, reason: '$e');
+    }
+  }
+
+  void removeMembers() async {
+    showDialog(
+      context: state.context,
+      builder: (context) => AlertDialog(
+        content: Container(
+          height: 230.0,
+          child: Form(
+            key: formKey,
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Remove members from ${room.roomName}',
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  SizedBox(height: 20.0),
+                  SizedBox(
+                    child: TextFormField(
+                      autocorrect: false,
+                      decoration: InputDecoration(
+                        hintText: 'EXAMPLE: 1@test.com, 2@test.com',
+                      ),
+                      validator: Room.validateMemberList,
+                      onSaved: saveMembers,
+                    ),
+                  ),
+                  SizedBox(height: 60.0),
+                  Row(
+                    children: [
+                      SizedBox(width: 20.0),
+                      RaisedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      SizedBox(width: 34.0),
+                      RaisedButton(
+                        onPressed: submitRemoveMembers,
+                        child: Text('Submit'),
+                      ),
+                      SizedBox(width: 20.0),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void leaveRoom() {
+    showDialog(
+      context: state.context,
+      builder: (context) => AlertDialog(
+        content: Container(
+          height: 230.0,
+          child: Center(
+            child: Column(
+              children: [
+                Text(
+                  'Are you sure you want to leave ${room.roomName}',
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+                SizedBox(height: 60.0),
+                Row(
+                  children: [
+                    SizedBox(width: 20.0),
+                    RaisedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                    SizedBox(width: 34.0),
+                    RaisedButton(
+                      onPressed: submitLeaveRoom,
+                      child: Text('I\'m Sure'),
+                    ),
+                    SizedBox(width: 20.0),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void submitLeaveRoom() {
+    Navigator.pop(state.context);
+    Navigator.pop(state.context);
+
+    try {
+      if (state.user.email == room.owner) {
+        // leaving as only member
+        if (room.members.length == 1) {
+          FirebaseController.deleteRoom(room);
+          state.roomList.remove(room);
+        }
+        // leaving room as owner will transfer ownership to a random room member
+        else {
+          room.members.remove(state.user.email);
+          room.owner = room.members[0];
+          state.roomList.remove(room);
+          FirebaseController.addMembersToRoom(emails: room.members, room: room);
+        }
+      } else {
+        // TODO: leaving room as non-owner
+        room.members.remove(state.user.email);
+        state.roomList.remove(room);
+        FirebaseController.addMembersToRoom(emails: room.members, room: room);
+      }
+      changeConfirmationDialog(
+          success: true, reason: 'You have left room ${room.roomName}');
+      state.render(() {});
+    } catch (e) {
+      changeConfirmationDialog(success: false, reason: 'Firebase Error: $e');
+    }
+  }
 
   void changeConfirmationDialog({
     @required bool success,
     String reason = '',
   }) {
-    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failure:\n') + reason;
+    String msg =
+        'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
 
     showDialog(
       context: state.context,

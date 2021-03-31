@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+import 'package:lesson3part1/model/room.dart';
 
 import '../controller/firebasecontroller.dart';
 import 'myview/mydialog.dart';
@@ -23,8 +24,10 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   _Controller con;
   User user;
   List<PhotoMemo> photoMemoList;
+  List<dynamic> roomMemoList;
   File photo;
   String progressMessage;
+  Room room;
 
   @override
   void initState() {
@@ -39,10 +42,16 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
+    roomMemoList ??= args[Constant.ARG_ROOMMEMOLIST];
+    room ??= args[Constant.ARG_ROOM];
+
+    String title = room != null
+        ? 'Upload Photo to ${room.roomName}'
+        : 'Upload Photo Privately';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Photomemo'),
+        title: Text(title),
         actions: [
           IconButton(
             icon: Icon(Icons.check),
@@ -123,16 +132,19 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
                 validator: PhotoMemo.validateMemo,
                 onSaved: con.saveMemo,
               ),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'SharedWith (comma seperated email list)',
-                ),
-                autocorrect: false,
-                keyboardType: TextInputType.emailAddress,
-                maxLines: 2,
-                validator: PhotoMemo.validateSharedWith,
-                onSaved: con.saveSharedWith,
-              ),
+              room == null
+                  ? TextFormField(
+                      decoration: InputDecoration(
+                        hintText:
+                            'SharedWith (comma seperated email list). \nLeave empty to upload privately',
+                      ),
+                      autocorrect: false,
+                      keyboardType: TextInputType.emailAddress,
+                      maxLines: 2,
+                      validator: PhotoMemo.validateSharedWith,
+                      onSaved: con.saveSharedWith,
+                    )
+                  : SizedBox(),
             ],
           ),
         ),
