@@ -57,35 +57,14 @@ class FirebaseController {
   }
 
   static Future<bool> checkIfUserExists({@required String email}) async {
-    // bool userExists = true;
-
-    // try {
-    //   UserCredential userCredential =
-    //       await FirebaseAuth.instance.signInWithEmailAndPassword(
-    //     email: email,
-    //     password: 'asdf',
-    //   );
-    // } on FirebaseAuthException catch (e) {
-    //   if (e.message ==
-    //           'There is no user record corresponding to this identifier. The user may have been deleted.' ||
-    //       e.message ==
-    //           'The email address is badly formatted.') // if user doesn't exist
-    //     userExists = false;
-
-    //   print('====================');
-    //   print('====================');
-    //   print('====================');
-    //   print(e.message);
-    // }
-
-    // print('===== $userExists');
-
-    // // await FirebaseAuth.instance
-    // //     .fetchSignInMethodsForEmail(email)
-    // //     .catchError((test) => userExists = false);
-    // return userExists;
-
-    return true;
+    try {
+      List<String> temp =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      print('==== list size: ${temp.length}');
+      return temp.length > 0;
+    } catch (error) {
+      return false;
+    }
   }
 
   static Future<String> addPhotoMemo(PhotoMemo photoMemo) async {
@@ -251,6 +230,7 @@ class FirebaseController {
     var results = <PhotoMemo>[];
     querySnapshot.docs.forEach(
         (doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
+
     return results;
   }
 }
