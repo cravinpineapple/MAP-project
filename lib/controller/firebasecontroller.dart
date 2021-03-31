@@ -11,8 +11,7 @@ import 'package:lesson3part1/model/room.dart';
 import '../model/constant.dart';
 
 class FirebaseController {
-  static Future<User> signIn(
-      {@required String email, @required String password}) async {
+  static Future<User> signIn({@required String email, @required String password}) async {
     UserCredential userCredential =
         await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -48,8 +47,7 @@ class FirebaseController {
       listener(progress);
     });
     await task;
-    String downloadURL =
-        await FirebaseStorage.instance.ref(fileName).getDownloadURL();
+    String downloadURL = await FirebaseStorage.instance.ref(fileName).getDownloadURL();
     return <String, String>{
       Constant.ARG_DOWNLOADURL: downloadURL,
       Constant.ARG_FILENAME: fileName,
@@ -97,8 +95,7 @@ class FirebaseController {
   }
 
   static Future<void> changeOwner(Room room, String updatedOwner) async {
-    CollectionReference roomCollection =
-        FirebaseFirestore.instance.collection('rooms');
+    CollectionReference roomCollection = FirebaseFirestore.instance.collection('rooms');
 
     if (!room.members.contains(updatedOwner.trim()))
       room.members.add(updatedOwner.trim());
@@ -135,8 +132,7 @@ class FirebaseController {
     return ref.id;
   }
 
-  static Future<List<PhotoMemo>> getPhotoMemoList(
-      {@required String email}) async {
+  static Future<List<PhotoMemo>> getPhotoMemoList({@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.CREATED_BY, isEqualTo: email)
@@ -151,8 +147,7 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<PhotoMemo>> getRoomPhotoMemoList(
-      {@required String roomName}) async {
+  static Future<List<PhotoMemo>> getRoomPhotoMemoList({@required String roomName}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.ROOM_NAME, isEqualTo: roomName)
@@ -188,14 +183,10 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<dynamic>> getImageLabels(
-      {@required File photoFile}) async {
-    final FirebaseVisionImage visionImage =
-        FirebaseVisionImage.fromFile(photoFile);
-    final ImageLabeler cloudLabeler =
-        FirebaseVision.instance.cloudImageLabeler();
-    final List<ImageLabel> cloudLabels =
-        await cloudLabeler.processImage(visionImage);
+  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
+    final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
+    final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
+    final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
 
     List<dynamic> labels = <dynamic>[];
 
@@ -249,8 +240,8 @@ class FirebaseController {
         .get();
 
     var results = <PhotoMemo>[];
-    querySnapshot.docs.forEach(
-        (doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
+    querySnapshot.docs
+        .forEach((doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
     return results;
   }
 }
