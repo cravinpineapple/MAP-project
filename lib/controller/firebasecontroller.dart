@@ -11,7 +11,8 @@ import 'package:lesson3part1/model/room.dart';
 import '../model/constant.dart';
 
 class FirebaseController {
-  static Future<User> signIn({@required String email, @required String password}) async {
+  static Future<User> signIn(
+      {@required String email, @required String password}) async {
     UserCredential userCredential =
         await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -47,7 +48,8 @@ class FirebaseController {
       listener(progress);
     });
     await task;
-    String downloadURL = await FirebaseStorage.instance.ref(fileName).getDownloadURL();
+    String downloadURL =
+        await FirebaseStorage.instance.ref(fileName).getDownloadURL();
     return <String, String>{
       Constant.ARG_DOWNLOADURL: downloadURL,
       Constant.ARG_FILENAME: fileName,
@@ -55,11 +57,35 @@ class FirebaseController {
   }
 
   static Future<bool> checkIfUserExists({@required String email}) async {
-    bool userExists = true;
-    await FirebaseAuth.instance
-        .fetchSignInMethodsForEmail(email)
-        .catchError(() => userExists = false);
-    return userExists;
+    // bool userExists = true;
+
+    // try {
+    //   UserCredential userCredential =
+    //       await FirebaseAuth.instance.signInWithEmailAndPassword(
+    //     email: email,
+    //     password: 'asdf',
+    //   );
+    // } on FirebaseAuthException catch (e) {
+    //   if (e.message ==
+    //           'There is no user record corresponding to this identifier. The user may have been deleted.' ||
+    //       e.message ==
+    //           'The email address is badly formatted.') // if user doesn't exist
+    //     userExists = false;
+
+    //   print('====================');
+    //   print('====================');
+    //   print('====================');
+    //   print(e.message);
+    // }
+
+    // print('===== $userExists');
+
+    // // await FirebaseAuth.instance
+    // //     .fetchSignInMethodsForEmail(email)
+    // //     .catchError((test) => userExists = false);
+    // return userExists;
+
+    return true;
   }
 
   static Future<String> addPhotoMemo(PhotoMemo photoMemo) async {
@@ -71,17 +97,34 @@ class FirebaseController {
   }
 
   static Future<void> changeOwner(Room room, String updatedOwner) async {
-    CollectionReference roomCollection = FirebaseFirestore.instance.collection('rooms');
-    roomCollection.doc(room.docID).set({
+    CollectionReference roomCollection =
+        FirebaseFirestore.instance.collection('rooms');
+
+    if (!room.members.contains(updatedOwner.trim()))
+      room.members.add(updatedOwner.trim());
+
+    print('==== docid ${room.docID}');
+
+    roomCollection.doc(room.docID).update({
       Room.OWNER: updatedOwner,
-      Room.ROOM_NAME: room.roomName,
       Room.MEMBERS: room.members,
       Room.MEMOS: room.memos,
+      Room.ROOM_NAME: room.roomName,
     }).catchError(
       (error) => print(
-        'Updat Owner Failed in Firebase Controller. ERROR: $error',
+        'Update Owner Failed in Firebase Controller. ERROR: $error',
       ),
     );
+
+    /*
+
+    String docID, Map<String, dynamic> updateInfo) async {
+    await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(docID)
+        .update(updateInfo);
+    */
+    // roomCollection.doc(room.docID)
   }
 
   static Future<String> addRoom(Room room) async {
@@ -92,7 +135,8 @@ class FirebaseController {
     return ref.id;
   }
 
-  static Future<List<PhotoMemo>> getPhotoMemoList({@required String email}) async {
+  static Future<List<PhotoMemo>> getPhotoMemoList(
+      {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.CREATED_BY, isEqualTo: email)
@@ -107,7 +151,8 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<PhotoMemo>> getRoomPhotoMemoList({@required String roomName}) async {
+  static Future<List<PhotoMemo>> getRoomPhotoMemoList(
+      {@required String roomName}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.ROOM_NAME, isEqualTo: roomName)
@@ -128,7 +173,8 @@ class FirebaseController {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.ROOM_COLLECTION)
         .where(Room.MEMBERS, arrayContains: email)
-        .orderBy(Room.ROOM_NAME, descending: true)
+        .orderBy(Room.ROOM_NAME,
+            descending: true) // WARNING: desecnding false breaks login
         .get();
 
     print('docs');
@@ -142,10 +188,14 @@ class FirebaseController {
     return result;
   }
 
-  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
-    final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
-    final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
-    final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
+  static Future<List<dynamic>> getImageLabels(
+      {@required File photoFile}) async {
+    final FirebaseVisionImage visionImage =
+        FirebaseVisionImage.fromFile(photoFile);
+    final ImageLabeler cloudLabeler =
+        FirebaseVision.instance.cloudImageLabeler();
+    final List<ImageLabel> cloudLabels =
+        await cloudLabeler.processImage(visionImage);
 
     List<dynamic> labels = <dynamic>[];
 
@@ -199,8 +249,8 @@ class FirebaseController {
         .get();
 
     var results = <PhotoMemo>[];
-    querySnapshot.docs
-        .forEach((doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
+    querySnapshot.docs.forEach(
+        (doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
     return results;
   }
 }

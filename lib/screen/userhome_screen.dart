@@ -111,7 +111,10 @@ class _UserHomeState extends State<UserHomeScreen> {
                 height: 50.0,
                 color: Colors.grey[100],
               ),
-              MyRoomList(roomList: roomList),
+              Container(
+                  height: roomList.length <= 5 ? roomList.length * 50.0 : 250.0,
+                  color: Color(0x545454),
+                  child: MyRoomList(roomList: roomList, user: user)),
               IconButton(
                 onPressed: con.addRoom,
                 icon: Icon(Icons.add),
@@ -219,7 +222,7 @@ class _Controller {
               ),
             ),
             FlatButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!formKey.currentState.validate()) return;
 
                 formKey.currentState.save();
@@ -238,7 +241,10 @@ class _Controller {
                     members: membersList,
                     owner: state.user.email);
 
-                FirebaseController.addRoom(tempRoom);
+                String tempDocID;
+                await FirebaseController.addRoom(tempRoom)
+                    .then((value) => tempDocID = value);
+                tempRoom.docID = tempDocID;
                 state.roomList.add(tempRoom);
                 Navigator.pop(state.context);
                 state.render(() => {});
