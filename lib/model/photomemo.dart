@@ -42,6 +42,7 @@ class PhotoMemo {
     // direct copy okay
     this.docID = p.docID;
     this.createdBy = p.docID;
+    this.roomName = p.roomName;
     this.memo = p.memo;
     this.title = p.title;
     this.photoFilename = p.photoFilename;
@@ -60,6 +61,7 @@ class PhotoMemo {
   void assign(PhotoMemo p) {
     // direct copy okay
     this.docID = p.docID;
+    this.roomName = p.roomName;
     this.createdBy = p.docID;
     this.memo = p.memo;
     this.title = p.title;
@@ -104,8 +106,7 @@ class PhotoMemo {
       imageLabels: doc[IMAGE_LABELS],
       timestamp: doc[TIMESTAMP] == null
           ? null
-          : DateTime.fromMillisecondsSinceEpoch(
-              doc[TIMESTAMP].millisecondsSinceEpoch),
+          : DateTime.fromMillisecondsSinceEpoch(doc[TIMESTAMP].millisecondsSinceEpoch),
     );
   }
 
@@ -128,8 +129,7 @@ class PhotoMemo {
     if (value == null || value.trim().length == 0) return null;
 
     // sharing with people
-    List<String> emailList =
-        value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     for (String email in emailList) {
       if (email.contains('@') && email.contains('.'))
         continue;

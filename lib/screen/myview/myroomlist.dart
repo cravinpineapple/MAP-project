@@ -4,6 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/room_screen.dart';
@@ -13,8 +14,13 @@ import '../../model/constant.dart';
 class MyRoomList extends StatefulWidget {
   final List<Room> roomList;
   final User user;
+  final List<PhotoMemo> photoMemos;
 
-  MyRoomList({@required this.roomList, @required this.user});
+  MyRoomList({
+    @required this.roomList,
+    @required this.user,
+    @required this.photoMemos,
+  });
 
   @override
   State<StatefulWidget> createState() {
@@ -25,6 +31,7 @@ class MyRoomList extends StatefulWidget {
 class _MyRoomListState extends State<MyRoomList> {
   ScrollController _scrollController;
   List<Room> roomList;
+  List<PhotoMemo> photoMemos;
   _Controller con;
   User user;
 
@@ -33,6 +40,7 @@ class _MyRoomListState extends State<MyRoomList> {
     super.initState();
     roomList = widget.roomList;
     user = widget.user;
+    photoMemos = widget.photoMemos;
     con = _Controller(this);
     _scrollController = ScrollController();
   }
@@ -59,6 +67,7 @@ class _Controller {
   _MyRoomListState state;
   _Controller(this.state);
   bool ownerChangeBool;
+  List<PhotoMemo> photoMemos;
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   String ownerUpdate = '';
@@ -70,18 +79,40 @@ class _Controller {
         .map(
           (e) => FlatButton(
             onLongPress: () => roomPrompt(e),
-            onPressed: () => Navigator.pushNamed(
-              state.context,
-              RoomScreen.routeName,
-              arguments: {
-                Constant.ARG_ROOM: e,
-                Constant.ARG_USER: state.user,
-              },
-            ),
+            onPressed: () => signInToRoom(e),
             child: Text(e.roomName),
           ),
         )
         .toList();
+  }
+
+  void signInToRoom(Room e) async {
+    MyDialog.circularProggressStart(state.context);
+    List<PhotoMemo> memos = [];
+    try {
+      memos = await FirebaseController.getRoomPhotoMemoList(
+        photoMemoList: e.memos,
+      );
+      print(memos);
+      MyDialog.circularProgressStop(state.context);
+      Navigator.pushNamed(
+        state.context,
+        RoomScreen.routeName,
+        arguments: {
+          Constant.ARG_ROOM: e,
+          Constant.ARG_USER: state.user,
+          Constant.ARG_PHOTOMEMOLIST: state.photoMemos,
+          Constant.ARG_ROOM_MEMOLIST: memos
+        },
+      );
+    } catch (e) {
+      MyDialog.circularProgressStop(state.context);
+      MyDialog.info(
+        context: state.context,
+        title: 'getRoomPhotoMemoList ERROR',
+        content: '$e',
+      );
+    }
   }
 
   void roomPrompt(Room e) {
@@ -220,10 +251,8 @@ class _Controller {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList
-                .where((e) => e.roomName == room.roomName)
-                .elementAt(0)
-                .owner = ownerUpdate;
+            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
+                ownerUpdate;
           },
         );
         changeConfirmationDialog(success: ownerChangeBool);
@@ -329,16 +358,24 @@ class _Controller {
 
     try {
       bool usersExist = true;
+      List<String> remover = [];
       for (var e in membersUpdate) {
+        if (room.members.contains(e)) {
+          remover.add(e);
+          continue;
+        }
         usersExist = await FirebaseController.checkIfUserExists(email: e);
         if (!usersExist) {
           break;
         }
       }
+      for (var e in remover) {
+        membersUpdate.remove(e);
+      }
       if (usersExist) {
         print('################################### ${room.docID}');
         room.members.addAll(membersUpdate);
-        FirebaseController.addMembersToRoom(
+        FirebaseController.updateRoom(
           emails: room.members,
           room: room,
         );
@@ -374,8 +411,7 @@ class _Controller {
       print('memberUpdate: $membersUpdate');
       for (String m in membersUpdate) {
         if (m == room.owner) {
-          changeConfirmationDialog(
-              success: false, reason: 'You cannot remove yourself');
+          changeConfirmationDialog(success: false, reason: 'You cannot remove yourself');
           return;
         }
 
@@ -383,16 +419,14 @@ class _Controller {
       }
       print('updatedRoomMembersList: ${room.members}');
 
-      FirebaseController.addMembersToRoom(
+      FirebaseController.updateRoom(
         emails: room.members,
         room: room,
       );
       state.render(
         () {
-          state.roomList
-              .where((e) => e.roomName == room.roomName)
-              .elementAt(0)
-              .members = membersUpdate;
+          state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).members =
+              room.members;
         },
       );
       changeConfirmationDialog(success: true);
@@ -505,13 +539,13 @@ class _Controller {
           room.members.remove(state.user.email);
           room.owner = room.members[0];
           state.roomList.remove(room);
-          FirebaseController.addMembersToRoom(emails: room.members, room: room);
+          FirebaseController.updateRoom(emails: room.members, room: room);
         }
       } else {
         // TODO: leaving room as non-owner
         room.members.remove(state.user.email);
         state.roomList.remove(room);
-        FirebaseController.addMembersToRoom(emails: room.members, room: room);
+        FirebaseController.updateRoom(emails: room.members, room: room);
       }
       changeConfirmationDialog(
           success: true, reason: 'You have left room ${room.roomName}');
@@ -525,8 +559,7 @@ class _Controller {
     @required bool success,
     String reason = '',
   }) {
-    String msg =
-        'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
+    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
 
     showDialog(
       context: state.context,

@@ -6,7 +6,8 @@ class Constant {
   static const ARG_ONE_PHOTOMEMO = 'one_photomemo';
   static const ARG_ROOMLIST = 'roomList';
   static const ARG_ROOM = 'room';
-  static const ARG_ROOMMEMOLIST = 'roomMemoList';
+  static const ARG_ROOM_MEMO_DOCIDS = 'roomMemoDocIDs';
+  static const ARG_ROOM_MEMOLIST = 'roomMemoList';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';

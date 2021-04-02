@@ -25,6 +25,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   User user;
   List<PhotoMemo> photoMemoList;
   List<dynamic> roomMemoList;
+  List<PhotoMemo> roomActualPhotoMemos;
   File photo;
   String progressMessage;
   Room room;
@@ -42,12 +43,11 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
     Map args = ModalRoute.of(context).settings.arguments;
     user ??= args[Constant.ARG_USER];
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
-    roomMemoList ??= args[Constant.ARG_ROOMMEMOLIST];
+    roomMemoList ??= args[Constant.ARG_ROOM_MEMO_DOCIDS];
+    roomActualPhotoMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     room ??= args[Constant.ARG_ROOM];
 
-    String title = room != null
-        ? 'Upload Photo to ${room.roomName}'
-        : 'Upload Photo Privately';
+    String title = room != null ? 'Upload Photo' : 'Upload Photo Privately';
 
     return Scaffold(
       appBar: AppBar(
@@ -112,8 +112,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage,
-                      style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -176,8 +175,7 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage =
-                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
@@ -191,12 +189,22 @@ class _Controller {
 
       tempMemo.photoFilename = photoInfo[Constant.ARG_FILENAME];
       tempMemo.photoURL = photoInfo[Constant.ARG_DOWNLOADURL];
+      tempMemo.roomName = state.room == null ? null : state.room.roomName;
       tempMemo.timestamp = DateTime.now();
       tempMemo.createdBy = state.user.email;
       tempMemo.imageLabels = imageLabels;
       String docID = await FirebaseController.addPhotoMemo(tempMemo);
       tempMemo.docID = docID;
       state.photoMemoList.insert(0, tempMemo);
+      state.roomActualPhotoMemos.add(tempMemo);
+
+      if (state.room != null) {
+        state.room.memos.add(docID);
+        await FirebaseController.updateRoom(
+          emails: state.room.members,
+          room: state.room,
+        );
+      }
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pop(state.context); // return to user home screen
@@ -205,7 +213,7 @@ class _Controller {
       MyDialog.info(
         context: state.context,
         title: 'Save Photo Memo Error',
-        content: e,
+        content: '$e',
       );
       print('=========== $e');
     }
@@ -225,8 +233,7 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null)
-        return; // selection from camera/gallery was canceled
+      if (_imageFile == null) return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -247,8 +254,7 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith =
-          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }
