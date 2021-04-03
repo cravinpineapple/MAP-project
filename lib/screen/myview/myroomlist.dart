@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/room_screen.dart';
 
@@ -15,11 +16,13 @@ class MyRoomList extends StatefulWidget {
   final List<Room> roomList;
   final User user;
   final List<PhotoMemo> photoMemos;
+  final UserRecord userRecord;
 
   MyRoomList({
     @required this.roomList,
     @required this.user,
     @required this.photoMemos,
+    @required this.userRecord,
   });
 
   @override
@@ -34,6 +37,7 @@ class _MyRoomListState extends State<MyRoomList> {
   List<PhotoMemo> photoMemos;
   _Controller con;
   User user;
+  UserRecord userRecord;
 
   @override
   void initState() {
@@ -41,6 +45,8 @@ class _MyRoomListState extends State<MyRoomList> {
     roomList = widget.roomList;
     user = widget.user;
     photoMemos = widget.photoMemos;
+    userRecord = widget.userRecord;
+
     con = _Controller(this);
     _scrollController = ScrollController();
   }
@@ -106,7 +112,8 @@ class _Controller {
           Constant.ARG_ROOM: e,
           Constant.ARG_USER: state.user,
           Constant.ARG_PHOTOMEMOLIST: state.photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: memos
+          Constant.ARG_ROOM_MEMOLIST: memos,
+          Constant.ARG_USERRECORD: state.userRecord,
         },
       );
     } catch (e) {

@@ -4,6 +4,7 @@ import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/signup_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
@@ -160,6 +161,8 @@ class _Controller {
           await FirebaseController.getPhotoMemoList(email: user.email);
       List<Room> roomList =
           await FirebaseController.getRoomList(email: user.email);
+      UserRecord userRecord =
+          await FirebaseController.getUserRecord(email: user.email);
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
@@ -169,6 +172,7 @@ class _Controller {
           Constant.ARG_USER: user,
           Constant.ARG_PHOTOMEMOLIST: photoMemoList,
           Constant.ARG_ROOMLIST: roomList,
+          Constant.ARG_USERRECORD: userRecord,
         },
       );
     } catch (e) {

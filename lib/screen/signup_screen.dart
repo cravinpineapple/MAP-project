@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 
 import '../controller/firebasecontroller.dart';
 import 'myview/mydialog.dart';
@@ -140,7 +143,23 @@ class _Controller {
     }
 
     try {
+      Random rand = Random();
+      List<dynamic> defaultProfilePics = [
+        UserRecord.USER1_DEFAULT_PROFILE_PIC_URL,
+        UserRecord.USER2_DEFAULT_PROFILE_PIC_URL,
+        UserRecord.USER3_DEFAULT_PROFILE_PIC_URL,
+        UserRecord.USER4_DEFAULT_PROFILE_PIC_URL,
+      ];
+
       await FirebaseController.createAccount(email: email, password: password);
+      UserRecord userRecord = UserRecord(
+        email: email,
+        username: email.split('@')[0],
+        age: 0,
+        profilePictureURL: defaultProfilePics[rand.nextInt(4)],
+      );
+      await FirebaseController.createUserRecord(userRecord: userRecord)
+          .then((value) => userRecord.docID = value);
       MyDialog.info(
         context: state.context,
         title: 'Account Created',

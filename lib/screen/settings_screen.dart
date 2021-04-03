@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 
 import '../model/constant.dart';
+import 'myview/myimage.dart';
 
 class SettingsScreen extends StatefulWidget {
   static const routeName = '/settingsScreen';
@@ -15,8 +17,9 @@ class SettingsScreen extends StatefulWidget {
 
 class _ProfileState extends State<SettingsScreen> {
   _Controller con;
-  User user;
+  UserRecord userRecord;
   bool editMode = false;
+  double profilePicLength = 225.0;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
@@ -32,7 +35,7 @@ class _ProfileState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
-    // user ??= args[Constant.ARG_USER];
+    userRecord ??= args[Constant.ARG_USERRECORD];
 
     return Scaffold(
       appBar: AppBar(
@@ -56,6 +59,23 @@ class _ProfileState extends State<SettingsScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
+                Container(
+                  height: profilePicLength,
+                  width: profilePicLength,
+                  // decoration: BoxDecoration(
+                  //   color: Colors.blue,
+                  //   border: Border.all(color: Colors.transparent),
+                  //   borderRadius: BorderRadius.all(
+                  //     Radius.circular(.5),
+                  //   ),
+                  // ),
+                  child: ClipOval(
+                    child: MyImage.network(
+                      url: userRecord.profilePictureURL,
+                      context: context,
+                    ),
+                  ),
+                ),
                 Row(
                   children: [
                     Expanded(
@@ -69,7 +89,7 @@ class _ProfileState extends State<SettingsScreen> {
                       flex: 4,
                       child: TextFormField(
                         enabled: editMode,
-                        initialValue: 'username here',
+                        initialValue: userRecord.username,
                         validator: null,
                         onSaved: null,
                       ),
@@ -89,7 +109,7 @@ class _ProfileState extends State<SettingsScreen> {
                       flex: 4,
                       child: TextFormField(
                         enabled: editMode,
-                        initialValue: 'age here',
+                        initialValue: userRecord.age.toString(),
                         validator: con.validateAge,
                         onSaved: con.saveAge,
                       ),

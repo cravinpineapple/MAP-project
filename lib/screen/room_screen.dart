@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/myview/myimage.dart';
@@ -23,6 +24,7 @@ class _RoomScreenState extends State<RoomScreen> {
   _Controller con;
   Room room;
   User user;
+  UserRecord userRecord;
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
 
@@ -41,6 +43,7 @@ class _RoomScreenState extends State<RoomScreen> {
     user ??= args[Constant.ARG_USER];
     photoMemos ??= args[Constant.ARG_PHOTOMEMOLIST];
     roomMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
+    userRecord ??= args[Constant.ARG_USERRECORD];
 
     return Scaffold(
       appBar: AppBar(
@@ -67,14 +70,15 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () =>
-            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
-          Constant.ARG_USER: user,
-          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-          Constant.ARG_ROOM: room,
-          Constant.ARG_PHOTOMEMOLIST: photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: roomMemos,
-        }),
+        onPressed: () => Navigator.pushNamed(
+            context, AddPhotoMemoScreen.routeName,
+            arguments: {
+              Constant.ARG_USER: user,
+              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+              Constant.ARG_ROOM: room,
+              Constant.ARG_PHOTOMEMOLIST: photoMemos,
+              Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            }),
       ),
       body: con.generateWall(),
     );
@@ -84,6 +88,7 @@ class _RoomScreenState extends State<RoomScreen> {
 class _Controller {
   _RoomScreenState state;
   _Controller(this.state);
+  final double profilePicSize = 30.0;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -124,9 +129,16 @@ class _Controller {
           color: Colors.grey[800],
           child: Row(
             children: [
-              Icon(
-                Icons.person,
-                size: 30.0,
+              // TODO: only getting current user's prifle pic.
+              Container(
+                height: profilePicSize,
+                width: profilePicSize,
+                child: ClipOval(
+                  child: MyImage.network(
+                    url: state.userRecord.profilePictureURL,
+                    context: state.context,
+                  ),
+                ),
               ),
               SizedBox(width: 20.0),
               Text(

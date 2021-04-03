@@ -8,6 +8,7 @@ class Constant {
   static const ARG_ROOM = 'room';
   static const ARG_ROOM_MEMO_DOCIDS = 'roomMemoDocIDs';
   static const ARG_ROOM_MEMOLIST = 'roomMemoList';
+  static const ARG_USERRECORD = 'userRecord';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';
@@ -15,6 +16,7 @@ class Constant {
   static const PHOTOIMAGE_FOLDER = 'photo_images';
   static const PHOTOMEMO_COLLECTION = 'photoMemos';
   static const ROOM_COLLECTION = 'rooms';
+  static const USERRECORD_COLLECTION = 'userRecords';
 
   static const ARG_DOWNLOADURL = 'downloadurl';
   static const ARG_FILENAME = 'filename';

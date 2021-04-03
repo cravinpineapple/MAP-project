@@ -5,6 +5,7 @@ import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
@@ -26,6 +27,7 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeState extends State<UserHomeScreen> {
   _Controller con;
   User user;
+  UserRecord userRecord;
   List<PhotoMemo> photoMemoList;
   List<Room> roomList;
   GlobalKey<FormState> formKey = new GlobalKey<FormState>();
@@ -44,6 +46,7 @@ class _UserHomeState extends State<UserHomeScreen> {
     user ??= args[Constant.ARG_USER];
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
     roomList ??= args[Constant.ARG_ROOMLIST];
+    userRecord ??= args[Constant.ARG_USERRECORD];
 
     print(roomList);
 
@@ -114,6 +117,7 @@ class _UserHomeState extends State<UserHomeScreen> {
                 roomList: roomList,
                 user: user,
                 photoMemos: photoMemoList,
+                userRecord: userRecord,
               ),
               IconButton(
                 onPressed: con.addRoom,
@@ -127,7 +131,12 @@ class _UserHomeState extends State<UserHomeScreen> {
                 leading: Icon(Icons.settings),
                 title: Text('Settings'),
                 onTap: () => Navigator.pushNamed(
-                    context, SettingsScreen.routeName), // con.settings,
+                  context,
+                  SettingsScreen.routeName,
+                  arguments: {
+                    Constant.ARG_USERRECORD: userRecord,
+                  },
+                ), // con.settings,
               ),
               ListTile(
                 leading: Icon(Icons.exit_to_app),
@@ -259,7 +268,6 @@ class _Controller {
                 state.roomList.add(tempRoom);
                 Navigator.pop(state.context);
                 state.render(() => {});
-                // FirebaseController.addRoom(tempRoom);
               },
               color: Colors.grey[800],
               child: Text(
