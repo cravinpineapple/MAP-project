@@ -147,7 +147,8 @@ class _Controller {
         content: 'Go to Sign In to use the app',
       );
     } catch (e) {
-      MyDialog.info(context: state.context, title: 'Cannot Create', content: '$e');
+      MyDialog.info(
+          context: state.context, title: 'Cannot Create', content: '$e');
     }
   }
 }
