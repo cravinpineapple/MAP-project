@@ -8,11 +8,10 @@ import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
+import 'package:lesson3part1/screen/settings_screen.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
 import 'package:lesson3part1/screen/myview/myroomlist.dart';
 
-import '../controller/firebasecontroller.dart';
-import '../controller/firebasecontroller.dart';
 import '../controller/firebasecontroller.dart';
 import 'myview/myimage.dart';
 
@@ -49,7 +48,8 @@ class _UserHomeState extends State<UserHomeScreen> {
     print(roomList);
 
     return WillPopScope(
-      onWillPop: () => Future.value(false), // disables android system back button
+      onWillPop: () =>
+          Future.value(false), // disables android system back button
       child: Scaffold(
         appBar: AppBar(
           // title: Text('User Home'),
@@ -110,14 +110,10 @@ class _UserHomeState extends State<UserHomeScreen> {
                 height: 50.0,
                 color: Colors.grey[100],
               ),
-              Container(
-                height: roomList.length <= 5 ? roomList.length * 50.0 : 250.0,
-                color: Color(0x545454),
-                child: MyRoomList(
-                  roomList: roomList,
-                  user: user,
-                  photoMemos: photoMemoList,
-                ),
+              MyRoomList(
+                roomList: roomList,
+                user: user,
+                photoMemos: photoMemoList,
               ),
               IconButton(
                 onPressed: con.addRoom,
@@ -130,7 +126,8 @@ class _UserHomeState extends State<UserHomeScreen> {
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text('Settings'),
-                onTap: null, // con.settings,
+                onTap: () => Navigator.pushNamed(
+                    context, SettingsScreen.routeName), // con.settings,
               ),
               ListTile(
                 leading: Icon(Icons.exit_to_app),
@@ -167,7 +164,8 @@ class _UserHomeState extends State<UserHomeScreen> {
                       children: [
                         Text(
                           photoMemoList[index].memo.length >= 20
-                              ? photoMemoList[index].memo.substring(0, 20) + '...'
+                              ? photoMemoList[index].memo.substring(0, 20) +
+                                  '...'
                               : photoMemoList[index].memo,
                         ),
                         Text('Created By: ${photoMemoList[index].createdBy}'),
@@ -232,14 +230,27 @@ class _Controller {
                 formKey.currentState.save();
 
                 if (members.trim().length != 0) {
-                  membersList =
-                      members.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+                  membersList = members
+                      .split(RegExp('(,| )+'))
+                      .map((e) => e.trim())
+                      .toList();
                 }
 
+                List<String> removeList = [];
+                for (var m in membersList) {
+                  if (!(await FirebaseController.checkIfUserExists(email: m))) {
+                    removeList.add(m);
+                  }
+                }
+                for (var m in removeList) {
+                  membersList.remove(m);
+                }
                 membersList.add(state.user.email);
 
                 Room tempRoom = Room(
-                    roomName: roomName, members: membersList, owner: state.user.email);
+                    roomName: roomName,
+                    members: membersList,
+                    owner: state.user.email);
 
                 String tempDocID;
                 await FirebaseController.addRoom(tempRoom)
@@ -261,23 +272,15 @@ class _Controller {
             key: formKey,
             child: Column(
               children: [
-                Text(
-                  'Add New Room',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[800],
-                    fontSize: 25.0,
-                  ),
-                ),
                 SizedBox(
                   width: 200.0,
                   child: Theme(
-                    data: Theme.of(context).copyWith(primaryColor: Colors.red[800]),
+                    data: Theme.of(context)
+                        .copyWith(primaryColor: Colors.red[800]),
                     child: TextFormField(
-                      style: TextStyle(color: Colors.grey[800]),
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Room Name',
-                        fillColor: Colors.blue[900],
                       ),
                       keyboardType: TextInputType.name,
                       autocorrect: true,
@@ -298,7 +301,7 @@ class _Controller {
                   child: Theme(
                     data: Theme.of(context),
                     child: TextFormField(
-                      style: TextStyle(color: Colors.grey[800]),
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: '1@test.com, 2@test.com',
                       ),
@@ -362,18 +365,22 @@ class _Controller {
   void sharedWithMe() async {
     try {
       List<PhotoMemo> photoMemoList =
-          await FirebaseController.getPhotoMemoSharedWithMe(email: state.user.email);
+          await FirebaseController.getPhotoMemoSharedWithMe(
+              email: state.user.email);
 
-      await Navigator.pushNamed(state.context, SharedWithScreen.routeName, arguments: {
-        Constant.ARG_USER: state.user,
-        Constant.ARG_PHOTOMEMOLIST:
-            photoMemoList, // list of shared with email we retrieved
-      });
+      await Navigator.pushNamed(state.context, SharedWithScreen.routeName,
+          arguments: {
+            Constant.ARG_USER: state.user,
+            Constant.ARG_PHOTOMEMOLIST:
+                photoMemoList, // list of shared with email we retrieved
+          });
 
       Navigator.pop(state.context); // closes the drawer
     } catch (e) {
       MyDialog.info(
-          context: state.context, title: 'Get Shared PhotoMemo Error', content: '$e');
+          context: state.context,
+          title: 'Get Shared PhotoMemo Error',
+          content: '$e');
     }
   }
 
@@ -397,7 +404,9 @@ class _Controller {
       });
     } catch (e) {
       MyDialog.info(
-          context: state.context, title: 'Delete PhotoMemo Error', content: '$e');
+          context: state.context,
+          title: 'Delete PhotoMemo Error',
+          content: '$e');
     }
   }
 
@@ -424,11 +433,13 @@ class _Controller {
           searchLabels: searchKeys,
         );
       } else {
-        results = await FirebaseController.getPhotoMemoList(email: state.user.email);
+        results =
+            await FirebaseController.getPhotoMemoList(email: state.user.email);
       }
       state.render(() => state.photoMemoList = results);
     } catch (e) {
-      MyDialog.info(context: state.context, title: 'Search Error', content: '$e');
+      MyDialog.info(
+          context: state.context, title: 'Search Error', content: '$e');
     }
   }
 }
