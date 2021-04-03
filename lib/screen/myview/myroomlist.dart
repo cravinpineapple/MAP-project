@@ -51,12 +51,16 @@ class _MyRoomListState extends State<MyRoomList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      isAlwaysShown: false,
-      // controller: _scrollController,
-      child: SingleChildScrollView(
-        child: Column(
-          children: con.generateRoomList(),
+    return Container(
+      height: roomList.length <= 5 ? roomList.length * 50.0 : 250.0,
+      color: Color(0x545454),
+      child: Scrollbar(
+        isAlwaysShown: false,
+        // controller: _scrollController,
+        child: SingleChildScrollView(
+          child: Column(
+            children: con.generateRoomList(),
+          ),
         ),
       ),
     );
@@ -251,8 +255,10 @@ class _Controller {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
-                ownerUpdate;
+            state.roomList
+                .where((e) => e.roomName == room.roomName)
+                .elementAt(0)
+                .owner = ownerUpdate;
           },
         );
         changeConfirmationDialog(success: ownerChangeBool);
@@ -352,7 +358,6 @@ class _Controller {
     formKey.currentState.save();
 
     // NOW WE HAVE THE LIST
-
     Navigator.pop(state.context);
     Navigator.pop(state.context);
 
@@ -372,8 +377,21 @@ class _Controller {
       for (var e in remover) {
         membersUpdate.remove(e);
       }
+      List<PhotoMemo> roomPhotoMemos =
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
       if (usersExist) {
         print('################################### ${room.docID}');
+
+        // ====== ADDING NEW ROOM MEMBERS TO EACH PHOTOMEMO IN ROOM ======
+        // locally
+        for (var m in roomPhotoMemos) m.roomMembers.addAll(membersUpdate);
+        // updates firebase
+        for (var m in roomPhotoMemos)
+          FirebaseController.updatePhotoMemo(
+              m.docID, {PhotoMemo.ROOM_MEMBERS: m.roomMembers});
+        // ===============================================================
+
         room.members.addAll(membersUpdate);
         FirebaseController.updateRoom(
           emails: room.members,
@@ -409,15 +427,29 @@ class _Controller {
       print('################################### ${room.docID}');
       print('roomMembersList: ${room.members}');
       print('memberUpdate: $membersUpdate');
-      for (String m in membersUpdate) {
-        if (m == room.owner) {
-          changeConfirmationDialog(success: false, reason: 'You cannot remove yourself');
-          return;
-        }
 
+      List<PhotoMemo> roomPhotoMemos =
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
+
+      if (membersUpdate.contains(room.owner)) {
+        changeConfirmationDialog(
+            success: false, reason: 'You cannot remove yourself');
+        return;
+      }
+
+      for (String m in membersUpdate) {
         room.members.remove(m);
       }
-      print('updatedRoomMembersList: ${room.members}');
+
+      // ====== ADDING NEW ROOM MEMBERS TO EACH PHOTOMEMO IN ROOM ======
+      // locally
+      for (var m in roomPhotoMemos) m.roomMembers = room.members;
+      // updates firebase
+      for (var m in roomPhotoMemos)
+        FirebaseController.updatePhotoMemo(
+            m.docID, {PhotoMemo.ROOM_MEMBERS: m.roomMembers});
+      // ===============================================================
 
       FirebaseController.updateRoom(
         emails: room.members,
@@ -425,8 +457,10 @@ class _Controller {
       );
       state.render(
         () {
-          state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).members =
-              room.members;
+          state.roomList
+              .where((e) => e.roomName == room.roomName)
+              .elementAt(0)
+              .members = room.members;
         },
       );
       changeConfirmationDialog(success: true);
@@ -559,7 +593,8 @@ class _Controller {
     @required bool success,
     String reason = '',
   }) {
-    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
+    String msg =
+        'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
 
     showDialog(
       context: state.context,
