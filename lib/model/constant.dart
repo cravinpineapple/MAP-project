@@ -9,6 +9,7 @@ class Constant {
   static const ARG_ROOM_MEMO_DOCIDS = 'roomMemoDocIDs';
   static const ARG_ROOM_MEMOLIST = 'roomMemoList';
   static const ARG_USERRECORD = 'userRecord';
+  static const ARG_USER_PROFILE_URL_MAP = 'userProfileURLMap';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';

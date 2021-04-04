@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/model/userrecord.dart';
+import 'package:lesson3part1/screen/myview/mydialog.dart';
 
 import '../model/constant.dart';
 import 'myview/myimage.dart';
@@ -53,7 +54,7 @@ class _ProfileState extends State<SettingsScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.fromLTRB(10.0, 20.0, 10.0, 10.0),
         child: Form(
           key: formKey,
           child: SingleChildScrollView(
@@ -62,13 +63,6 @@ class _ProfileState extends State<SettingsScreen> {
                 Container(
                   height: profilePicLength,
                   width: profilePicLength,
-                  // decoration: BoxDecoration(
-                  //   color: Colors.blue,
-                  //   border: Border.all(color: Colors.transparent),
-                  //   borderRadius: BorderRadius.all(
-                  //     Radius.circular(.5),
-                  //   ),
-                  // ),
                   child: ClipOval(
                     child: MyImage.network(
                       url: userRecord.profilePictureURL,
@@ -76,10 +70,13 @@ class _ProfileState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+                SizedBox(height: 20.0),
+                Divider(height: 5.0),
+                SizedBox(height: 20.0),
                 Row(
                   children: [
                     Expanded(
-                      flex: 1,
+                      flex: 2,
                       child: Text(
                         'Username',
                         style: Theme.of(context).textTheme.headline6,
@@ -99,7 +96,7 @@ class _ProfileState extends State<SettingsScreen> {
                 Row(
                   children: [
                     Expanded(
-                      flex: 1,
+                      flex: 2,
                       child: Text(
                         'Age',
                         style: Theme.of(context).textTheme.headline6,
@@ -112,6 +109,25 @@ class _ProfileState extends State<SettingsScreen> {
                         initialValue: userRecord.age.toString(),
                         validator: con.validateAge,
                         onSaved: con.saveAge,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20.0),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'Email',
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        userRecord.email,
+                        style: TextStyle(color: Colors.amber),
                       ),
                     ),
                   ],
@@ -131,40 +147,57 @@ class _ProfileState extends State<SettingsScreen> {
 class _Controller {
   _ProfileState state;
   _Controller(this.state);
+  String updatedUsername = 'A';
+  int updatedAge = 99;
+  UserRecord tempUserRecord;
 
   void edit() {
     state.render(() => state.editMode = true);
   }
 
-  void update() {
+  void update() async {
     if (!state.formKey.currentState.validate()) return;
-
     state.formKey.currentState.save();
+
+    try {
+      tempUserRecord.assign(state.userRecord);
+      // TODO: FIREBASE STUFF
+    } catch (e) {
+      MyDialog.info(
+        context: state.context,
+        title: 'Update User Record Error',
+        content: '$e',
+      );
+    }
 
     state.render(() => state.editMode = false);
   }
 
   String validateUsername(String value) {
-    if (value.length < 2) {
-      return 'min 2 chars';
+    if (value.length == 0 || value.length > 20) {
+      return 'min 1 chars, max 20 chars';
     } else {
       return null;
     }
   }
 
-  void saveUsername(String value) {}
+  void saveUsername(String value) {
+    updatedUsername = value;
+  }
 
   String validateAge(String value) {
     try {
       int age = int.parse(value);
-      if (age >= 5)
+      if (age >= 13 || age <= 125)
         return null;
       else
-        return 'Min age is 5';
+        return 'Min age is 13';
     } catch (e) {
-      return 'Not valid age';
+      return 'Age must be a number';
     }
   }
 
-  void saveAge(String value) {}
+  void saveAge(String value) {
+    updatedAge = int.parse(value);
+  }
 }

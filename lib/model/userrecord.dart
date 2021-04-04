@@ -38,6 +38,14 @@ class UserRecord {
     this.age = u.age;
   }
 
+  void assign(UserRecord u) {
+    this.age = u.age;
+    this.docID = u.docID;
+    this.email = u.email;
+    this.profilePictureURL = u.profilePictureURL;
+    this.username = u.username;
+  }
+
   Map<String, dynamic> serialize() {
     return <String, dynamic>{
       EMAIL: this.email,

@@ -8,6 +8,7 @@ import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/myview/myimage.dart';
+import 'package:lesson3part1/screen/myview/profilepic.dart';
 
 import '../model/constant.dart';
 
@@ -27,6 +28,7 @@ class _RoomScreenState extends State<RoomScreen> {
   UserRecord userRecord;
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
+  Map<String, String> memberProfilePicURLS;
 
   @override
   void initState() {
@@ -44,6 +46,9 @@ class _RoomScreenState extends State<RoomScreen> {
     photoMemos ??= args[Constant.ARG_PHOTOMEMOLIST];
     roomMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     userRecord ??= args[Constant.ARG_USERRECORD];
+    memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
+
+    print('========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
 
     return Scaffold(
       appBar: AppBar(
@@ -70,15 +75,14 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () => Navigator.pushNamed(
-            context, AddPhotoMemoScreen.routeName,
-            arguments: {
-              Constant.ARG_USER: user,
-              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-              Constant.ARG_ROOM: room,
-              Constant.ARG_PHOTOMEMOLIST: photoMemos,
-              Constant.ARG_ROOM_MEMOLIST: roomMemos,
-            }),
+        onPressed: () =>
+            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
+          Constant.ARG_USER: user,
+          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+          Constant.ARG_ROOM: room,
+          Constant.ARG_PHOTOMEMOLIST: photoMemos,
+          Constant.ARG_ROOM_MEMOLIST: roomMemos,
+        }),
       ),
       body: con.generateWall(),
     );
@@ -110,7 +114,6 @@ class _Controller {
         height: 56.0,
         color: Colors.grey[800],
         child: Text(
-          // TODO: SET ROOM NAME TO A LENGTH LIMIT
           'Members',
           style: TextStyle(
             color: Colors.black,
@@ -120,7 +123,33 @@ class _Controller {
         ),
       ),
     );
+    w.add(
+      Container(
+        padding: EdgeInsets.only(left: 10.0),
+        margin: EdgeInsets.all(10.0),
+        height: 50.0,
+        color: Colors.grey[800],
+        child: Row(
+          children: [
+            ProfilePic(
+              profilePicSize: profilePicSize,
+              url: state.memberProfilePicURLS[state.room.owner],
+            ),
+            SizedBox(width: 20.0),
+            Text(
+              state.room.owner,
+              style: TextStyle(fontSize: 20.0),
+            ),
+            Icon(
+              Icons.star,
+              color: Colors.amber,
+            ),
+          ],
+        ),
+      ),
+    );
     for (var m in state.room.members) {
+      if (m == state.room.owner) continue;
       w.add(
         Container(
           padding: EdgeInsets.only(left: 10.0),
@@ -129,16 +158,9 @@ class _Controller {
           color: Colors.grey[800],
           child: Row(
             children: [
-              // TODO: only getting current user's prifle pic.
-              Container(
-                height: profilePicSize,
-                width: profilePicSize,
-                child: ClipOval(
-                  child: MyImage.network(
-                    url: state.userRecord.profilePictureURL,
-                    context: state.context,
-                  ),
-                ),
+              ProfilePic(
+                profilePicSize: profilePicSize,
+                url: state.memberProfilePicURLS[m],
               ),
               SizedBox(width: 20.0),
               Text(
