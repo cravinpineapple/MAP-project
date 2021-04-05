@@ -97,11 +97,14 @@ class _UserHomeState extends State<UserHomeScreen> {
           child: ListView(
             children: [
               UserAccountsDrawerHeader(
-                currentAccountPicture: Icon(
-                  Icons.person,
-                  size: 100.0,
+                currentAccountPicture: ClipOval(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: MyImage.network(
+                        url: userRecord.profilePictureURL, context: context),
+                  ),
                 ),
-                accountName: Text(user.displayName ?? 'N / A'),
+                accountName: Text(userRecord.username),
                 accountEmail: Text(user.email),
               ),
               ListTile(
@@ -130,13 +133,18 @@ class _UserHomeState extends State<UserHomeScreen> {
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text('Settings'),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  SettingsScreen.routeName,
-                  arguments: {
-                    Constant.ARG_USERRECORD: userRecord,
-                  },
-                ), // con.settings,
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    SettingsScreen.routeName,
+                    arguments: {
+                      Constant.ARG_USERRECORD: userRecord,
+                      Constant.ARG_USER: user,
+                    },
+                  );
+
+                  render(() {});
+                },
               ),
               ListTile(
                 leading: Icon(Icons.exit_to_app),

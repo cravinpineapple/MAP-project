@@ -32,9 +32,12 @@ class _ProfilePicState extends State<ProfilePic> {
       height: profilePicSize,
       width: profilePicSize,
       child: ClipOval(
-        child: MyImage.network(
-          url: url,
-          context: context,
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: MyImage.network(
+            url: url,
+            context: context,
+          ),
         ),
       ),
     );

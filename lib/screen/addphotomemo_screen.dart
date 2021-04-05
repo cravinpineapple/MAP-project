@@ -168,6 +168,7 @@ class _Controller {
 
     try {
       Map photoInfo = await FirebaseController.uploadPhotoFile(
+        profilePic: false,
         photo: state.photo,
         uid: state.user.uid,
         listener: (double progress) {

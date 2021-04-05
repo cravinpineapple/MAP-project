@@ -5,11 +5,13 @@ class UserRecord {
   String email;
   String username;
   String profilePictureURL;
+  String profilePicFileName;
   int age;
 
   static const EMAIL = 'email';
   static const USERNAME = 'username';
   static const PROFILE_PICTURE_URL = 'profilePictureURL';
+  static const PROFILE_PICTURE_FILE_NAME = 'profilePictureFileName';
   static const AGE = 'age';
 
   // DEFAULT PROFILE PICS URLS
@@ -22,13 +24,13 @@ class UserRecord {
   static const USER4_DEFAULT_PROFILE_PIC_URL =
       'https://firebasestorage.googleapis.com/v0/b/cmsc4303-noahs-lesson3part1.appspot.com/o/profile_pictures%2Fuser4.png?alt=media&token=ff1cc63d-c49d-413d-b0e3-ddf0143badc9';
 
-  UserRecord({
-    @required this.email,
-    this.docID,
-    this.username,
-    this.profilePictureURL,
-    this.age,
-  });
+  UserRecord(
+      {@required this.email,
+      this.docID,
+      this.username,
+      this.profilePictureURL,
+      this.age,
+      this.profilePicFileName});
 
   UserRecord.clone(UserRecord u) {
     this.docID = u.docID;
@@ -36,6 +38,7 @@ class UserRecord {
     this.username = u.username;
     this.profilePictureURL = u.profilePictureURL;
     this.age = u.age;
+    this.profilePicFileName = u.profilePicFileName;
   }
 
   void assign(UserRecord u) {
@@ -44,6 +47,7 @@ class UserRecord {
     this.email = u.email;
     this.profilePictureURL = u.profilePictureURL;
     this.username = u.username;
+    this.profilePicFileName = u.profilePicFileName;
   }
 
   Map<String, dynamic> serialize() {
@@ -52,6 +56,7 @@ class UserRecord {
       USERNAME: this.username,
       PROFILE_PICTURE_URL: this.profilePictureURL,
       AGE: this.age,
+      PROFILE_PICTURE_FILE_NAME: this.profilePicFileName,
     };
   }
 
@@ -62,6 +67,7 @@ class UserRecord {
       username: doc[USERNAME],
       profilePictureURL: doc[PROFILE_PICTURE_URL],
       age: doc[AGE],
+      profilePicFileName: doc[PROFILE_PICTURE_FILE_NAME],
     );
   }
 }

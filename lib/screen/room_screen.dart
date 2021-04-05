@@ -29,6 +29,7 @@ class _RoomScreenState extends State<RoomScreen> {
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
   Map<String, String> memberProfilePicURLS;
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -48,11 +49,16 @@ class _RoomScreenState extends State<RoomScreen> {
     userRecord ??= args[Constant.ARG_USERRECORD];
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
 
-    print('========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
+    print(
+        '========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
 
     return Scaffold(
       appBar: AppBar(
         title: Text(room.roomName),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           // SOLUTION for changing the icon of end drawer found from:
           // https://stackoverflow.com/questions/51957960/how-to-change-the-enddrawer-icon-in-flutter
@@ -75,14 +81,15 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () =>
-            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
-          Constant.ARG_USER: user,
-          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-          Constant.ARG_ROOM: room,
-          Constant.ARG_PHOTOMEMOLIST: photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: roomMemos,
-        }),
+        onPressed: () => Navigator.pushNamed(
+            context, AddPhotoMemoScreen.routeName,
+            arguments: {
+              Constant.ARG_USER: user,
+              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+              Constant.ARG_ROOM: room,
+              Constant.ARG_PHOTOMEMOLIST: photoMemos,
+              Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            }),
       ),
       body: con.generateWall(),
     );
@@ -191,10 +198,11 @@ class _Controller {
           width: width,
           height: width,
           child: FittedBox(
-            fit: BoxFit.fitWidth,
-            child: FlatButton(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: MaterialButton(
               child: MyImage.network(url: m.photoURL, context: state.context),
-              onPressed: null,
+              onPressed: () => focusMemoView(m),
             ),
           ),
           color: Colors.transparent,
@@ -220,5 +228,60 @@ class _Controller {
     return w;
   }
 
-  void addPhotoMemo() {}
+  void focusMemoView(PhotoMemo m) {
+    var focusWidth = MediaQuery.of(state.context).size.width * 0.8;
+    var focusHeight = MediaQuery.of(state.context).size.height * 0.8;
+    showDialog(
+      context: state.context,
+      builder: (context) => AlertDialog(
+        contentPadding: EdgeInsets.all(0.0),
+        backgroundColor: Colors.transparent,
+        content: Column(
+          children: [
+            Column(
+              children: [
+                SizedBox(height: 20.0),
+                Container(
+                  height: focusWidth,
+                  width: focusWidth,
+                  color: Colors.transparent,
+                  child: FittedBox(
+                      fit: BoxFit.cover,
+                      clipBehavior: Clip.hardEdge,
+                      child: MyImage.network(
+                          url: m.photoURL, context: state.context)),
+                ),
+                Container(
+                  height: focusHeight * 0.3,
+                  width: focusWidth,
+                  color: Colors.white,
+                  child: Form(
+                    key: state.formKey,
+                    child: Center(
+                      child: Column(
+                        children: [],
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: focusHeight * 0.1,
+                  width: focusWidth,
+                  color: Colors.green,
+                  child: Form(
+                    key: state.formKey,
+                    child: Center(
+                      child: Column(
+                        children: [],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

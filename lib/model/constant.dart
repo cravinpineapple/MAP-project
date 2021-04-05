@@ -15,6 +15,7 @@ class Constant {
   static const SRC_GALLERY = 'gallery';
 
   static const PHOTOIMAGE_FOLDER = 'photo_images';
+  static const PROFILEPIC_FOLDER = 'profile_pictures';
   static const PHOTOMEMO_COLLECTION = 'photoMemos';
   static const ROOM_COLLECTION = 'rooms';
   static const USERRECORD_COLLECTION = 'userRecords';
