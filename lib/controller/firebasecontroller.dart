@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:lesson3part1/model/comment.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
@@ -117,22 +118,22 @@ class FirebaseController {
         'Update Owner Failed in Firebase Controller. ERROR: $error',
       ),
     );
-
-    /*
-
-    String docID, Map<String, dynamic> updateInfo) async {
-    await FirebaseFirestore.instance
-        .collection(Constant.PHOTOMEMO_COLLECTION)
-        .doc(docID)
-        .update(updateInfo);
-    */
-    // roomCollection.doc(room.docID)
   }
 
   static Future<String> addRoom(Room room) async {
     var ref = await FirebaseFirestore.instance
         .collection(Constant.ROOM_COLLECTION)
         .add(room.serialize());
+
+    return ref.id;
+  }
+
+  static Future<String> addComment(Comment comment, PhotoMemo memo) async {
+    var ref = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(memo.docID)
+        .collection(Constant.COMMENT_COLLECTION)
+        .add(comment.serialize());
 
     return ref.id;
   }

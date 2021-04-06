@@ -19,6 +19,7 @@ class Constant {
   static const PHOTOMEMO_COLLECTION = 'photoMemos';
   static const ROOM_COLLECTION = 'rooms';
   static const USERRECORD_COLLECTION = 'userRecords';
+  static const COMMENT_COLLECTION = 'commentCollection';
 
   static const ARG_DOWNLOADURL = 'downloadurl';
   static const ARG_FILENAME = 'filename';
