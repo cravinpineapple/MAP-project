@@ -302,6 +302,17 @@ class FirebaseController {
     return results;
   }
 
+  static Future<int> getPhotomemoCommentCount(
+      {@required PhotoMemo photoMemo}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(photoMemo.docID)
+        .collection(Constant.COMMENTS_COLLECTION)
+        .get();
+
+    return querySnapshot.size;
+  }
+
   static Future<String> createUserRecord(
       {@required UserRecord userRecord}) async {
     var ref = await FirebaseFirestore.instance
@@ -321,6 +332,25 @@ class FirebaseController {
     querySnapshot.docs.forEach(
         (doc) => userRecord = UserRecord.deserialize(doc.data(), doc.id));
     return userRecord;
+  }
+
+  // UserRecord U
+  //  result[u.email] = result[u.username]
+  static Future<Map<String, String>> getUserRecordList(
+      {@required List<dynamic> roomMemberList}) async {
+    Map<String, String> result = {};
+    for (var m in roomMemberList) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(Constant.USERRECORD_COLLECTION)
+          .where(UserRecord.EMAIL, isEqualTo: m)
+          .get();
+
+      querySnapshot.docs.forEach((doc) {
+        result[m] = UserRecord.deserialize(doc.data(), doc.id).username;
+      });
+    }
+
+    return result;
   }
 
   static Future<Map> getRoomMemberProfilePicURLs({

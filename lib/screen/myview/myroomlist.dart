@@ -103,6 +103,8 @@ class _Controller {
       memos = await FirebaseController.getRoomPhotoMemoList(
         photoMemoList: e.memos,
       );
+      Map memberUsernames =
+          await FirebaseController.getUserRecordList(roomMemberList: e.members);
       Map urls = await FirebaseController.getRoomMemberProfilePicURLs(
         roomMemberList: e.members,
       );
@@ -118,6 +120,7 @@ class _Controller {
           Constant.ARG_ROOM_MEMOLIST: memos,
           Constant.ARG_USERRECORD: state.userRecord,
           Constant.ARG_USER_PROFILE_URL_MAP: urls,
+          Constant.USER_USERNAME_MAP: memberUsernames,
         },
       );
     } catch (e) {
@@ -266,8 +269,10 @@ class _Controller {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
-                ownerUpdate;
+            state.roomList
+                .where((e) => e.roomName == room.roomName)
+                .elementAt(0)
+                .owner = ownerUpdate;
           },
         );
         changeConfirmationDialog(success: ownerChangeBool);
@@ -387,7 +392,8 @@ class _Controller {
         membersUpdate.remove(e);
       }
       List<PhotoMemo> roomPhotoMemos =
-          await FirebaseController.getRoomPhotoMemoList(photoMemoList: room.memos);
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
       if (usersExist) {
         print('################################### ${room.docID}');
 
@@ -437,10 +443,12 @@ class _Controller {
       print('memberUpdate: $membersUpdate');
 
       List<PhotoMemo> roomPhotoMemos =
-          await FirebaseController.getRoomPhotoMemoList(photoMemoList: room.memos);
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
 
       if (membersUpdate.contains(room.owner)) {
-        changeConfirmationDialog(success: false, reason: 'You cannot remove yourself');
+        changeConfirmationDialog(
+            success: false, reason: 'You cannot remove yourself');
         return;
       }
 
@@ -463,8 +471,10 @@ class _Controller {
       );
       state.render(
         () {
-          state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).members =
-              room.members;
+          state.roomList
+              .where((e) => e.roomName == room.roomName)
+              .elementAt(0)
+              .members = room.members;
         },
       );
       changeConfirmationDialog(success: true);
@@ -596,7 +606,8 @@ class _Controller {
     @required bool success,
     String reason = '',
   }) {
-    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
+    String msg =
+        'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
 
     showDialog(
       context: state.context,

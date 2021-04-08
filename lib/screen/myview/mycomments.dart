@@ -31,6 +31,7 @@ class _CommentsBlockState extends State<CommentsBlock> {
   List<Comment> comments = [];
   UserRecord userRecord;
   PhotoMemo photoMemo;
+  dynamic parentSetState;
 
   @override
   void initState() {
@@ -54,70 +55,75 @@ class _CommentsBlockState extends State<CommentsBlock> {
 class _Controller {
   _CommentsBlockState state;
   _Controller(this.state);
+  List<Comment> deleteList = [];
 
   DateFormat formatter = DateFormat('EEE, M/d/y H:mm');
 
   List<Widget> buildCommentList() {
-    print('====== test');
     return state.comments
         .map(
-          (e) => Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(width: 10.0),
-                  ProfilePic(profilePicSize: 40.0, url: e.profilePicURL),
-                  Expanded(
-                    flex: 4,
-                    child: Container(
-                      margin: EdgeInsets.only(left: 20.0, right: 5.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                              margin: EdgeInsets.only(top: 10.0, bottom: 10.0),
-                              height: 10.0,
-                              child: Text(
-                                formatter.format(e.datePosted),
-                                style: TextStyle(fontSize: 10.0),
-                              )),
-                          Container(
-                              height: 20.0,
-                              child: Text(
-                                e.username,
-                                style: TextStyle(
-                                    color:
-                                        Theme.of(state.context).primaryColor),
-                              )),
-                          Wrap(
-                            children: [
-                              Container(
-                                  child: Text(
-                                e.message,
-                                style: TextStyle(fontFeatures: [
-                                  FontFeature.tabularFigures()
-                                ]),
-                              )),
-                            ],
+          (e) => !deleteList.contains(e)
+              ? Column(
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(width: 10.0),
+                        ProfilePic(profilePicSize: 40.0, url: e.profilePicURL),
+                        Expanded(
+                          flex: 4,
+                          child: Container(
+                            margin: EdgeInsets.only(left: 20.0, right: 5.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                    margin: EdgeInsets.only(
+                                        top: 10.0, bottom: 10.0),
+                                    height: 10.0,
+                                    child: Text(
+                                      formatter.format(e.datePosted),
+                                      style: TextStyle(fontSize: 10.0),
+                                    )),
+                                Container(
+                                    height: 20.0,
+                                    child: Text(
+                                      e.username,
+                                      style: TextStyle(
+                                          color: Theme.of(state.context)
+                                              .primaryColor),
+                                    )),
+                                Wrap(
+                                  children: [
+                                    Container(
+                                        child: Text(
+                                      e.message,
+                                      style: TextStyle(fontFeatures: [
+                                        FontFeature.tabularFigures()
+                                      ]),
+                                    )),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        Expanded(
+                          flex: state.userRecord.email == e.commentOwnerEmail
+                              ? 1
+                              : 0,
+                          child: state.userRecord.email == e.commentOwnerEmail
+                              ? IconButton(
+                                  icon: Icon(Icons.delete_forever),
+                                  onPressed: () => deleteMyComment(e),
+                                )
+                              : SizedBox(),
+                        ),
+                      ],
                     ),
-                  ),
-                  Expanded(
-                    flex: state.userRecord.email == e.commentOwnerEmail ? 1 : 0,
-                    child: state.userRecord.email == e.commentOwnerEmail
-                        ? IconButton(
-                            icon: Icon(Icons.delete_forever),
-                            onPressed: () => deleteMyComment(e),
-                          )
-                        : SizedBox(),
-                  ),
-                ],
-              ),
-              Divider(),
-            ],
-          ),
+                    Divider(),
+                  ],
+                )
+              : SizedBox(),
         )
         .toList();
   }
@@ -163,7 +169,8 @@ class _Controller {
     try {
       await FirebaseController.deleteComment(
           comment: comment, photoMemo: state.photoMemo);
-      state.render(() => state.comments.remove(comment));
+
+      state.render(() => deleteList.add(comment));
       Navigator.pop(state.context);
     } catch (e) {
       MyDialog.info(

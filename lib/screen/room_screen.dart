@@ -8,6 +8,7 @@ import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/myview/mycomments.dart';
+import 'package:lesson3part1/screen/myview/mydetailedview.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/myview/myimage.dart';
 import 'package:lesson3part1/screen/myview/profilepic.dart';
@@ -31,6 +32,7 @@ class _RoomScreenState extends State<RoomScreen> {
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
   Map<String, String> memberProfilePicURLS;
+  Map<dynamic, dynamic> memberUsernames;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
@@ -50,9 +52,7 @@ class _RoomScreenState extends State<RoomScreen> {
     roomMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     userRecord ??= args[Constant.ARG_USERRECORD];
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
-
-    print(
-        '========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
+    memberUsernames ??= args[Constant.USER_USERNAME_MAP];
 
     return Scaffold(
       appBar: AppBar(
@@ -105,6 +105,7 @@ class _Controller {
   String message = '';
   List<Comment> comments = [];
   Comment tempComment;
+  bool detailedView = false;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -149,7 +150,7 @@ class _Controller {
             ),
             SizedBox(width: 20.0),
             Text(
-              state.room.owner,
+              state.memberUsernames[state.room.owner],
               style: TextStyle(fontSize: 20.0),
             ),
             Icon(
@@ -176,7 +177,7 @@ class _Controller {
               ),
               SizedBox(width: 20.0),
               Text(
-                m,
+                state.memberUsernames[m],
                 style: TextStyle(fontSize: 20.0),
               ),
             ],
@@ -234,9 +235,15 @@ class _Controller {
   }
 
   void focusMemoView(PhotoMemo m) async {
+    int commentCount;
+    UserRecord photoMemoOwner;
     try {
       comments = await FirebaseController.getComments(memo: m);
-      // getting comment owner username from firebase
+      commentCount =
+          await FirebaseController.getPhotomemoCommentCount(photoMemo: m);
+      photoMemoOwner =
+          await FirebaseController.getUserRecord(email: m.createdBy);
+      // getting comment owner username & profile pic from firebase
       for (var c in comments) {
         UserRecord userR =
             await FirebaseController.getUserRecord(email: c.commentOwnerEmail);
@@ -265,86 +272,131 @@ class _Controller {
                   Column(
                     children: [
                       SizedBox(height: 0.0),
-                      Container(
-                        height: focusWidth,
-                        width: focusWidth,
-                        color: Colors.transparent,
-                        child: FittedBox(
-                            fit: BoxFit.cover,
-                            clipBehavior: Clip.hardEdge,
-                            child: MyImage.network(
-                                url: m.photoURL, context: state.context)),
-                      ),
-                      Container(
-                        height: focusHeight * 0.3,
-                        width: focusWidth,
-                        color: Colors.grey[800],
-                        child: SingleChildScrollView(
-                          reverse: true,
-                          child: CommentsBlock(
-                            comments: comments,
-                            userRecord: state.userRecord,
-                            photoMemo: m,
+                      Stack(
+                        children: [
+                          Container(
+                            height: focusWidth,
+                            width: focusWidth,
+                            color: Colors.transparent,
+                            child: FittedBox(
+                                fit: BoxFit.cover,
+                                clipBehavior: Clip.hardEdge,
+                                child: MyImage.network(
+                                    url: m.photoURL, context: state.context)),
                           ),
-                        ),
-                      ),
-                      Container(
-                        height: focusHeight * 0.18,
-                        width: focusWidth,
-                        color: Colors.grey[800],
-                        child: Column(
-                          children: [
-                            Divider(),
-                            Form(
-                              key: state.formKey,
-                              child: Center(
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          margin: EdgeInsets.only(left: 10.0),
-                                          width: focusWidth * 0.75,
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              hintText: 'Leave a comment!',
-                                            ),
-                                            autocorrect: true,
-                                            obscureText: false,
-                                            validator: validateComment,
-                                            onSaved: saveComment,
-                                          ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              top: 12.0, left: 10.0),
-                                          child: ClipOval(
-                                            child: Container(
-                                              color: Theme.of(state.context)
-                                                  .primaryColor,
-                                              child: IconButton(
-                                                icon: Icon(
-                                                  Icons.arrow_forward_rounded,
-                                                ),
-                                                iconSize: 30.0,
-                                                onPressed: () {
-                                                  uploadComment(m);
-                                                  setState(() => comments
-                                                      .add(tempComment));
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                          Positioned(
+                            right: 3.0,
+                            bottom: 3.0,
+                            width: 40.0,
+                            height: 40.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: Colors.grey[600].withOpacity(0.7),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Positioned(
+                            right: !detailedView ? 8.0 : 4.0,
+                            bottom: !detailedView ? 8.0 : 4.0,
+                            child: IconButton(
+                              icon: Icon(
+                                !detailedView
+                                    ? Icons.analytics_outlined
+                                    : Icons.comment_outlined,
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.8),
+                                size: !detailedView ? 50.0 : 40.0,
+                              ),
+                              onPressed: () =>
+                                  setState(() => detailedView = !detailedView),
+                            ),
+                          ),
+                        ],
                       ),
+                      Container(
+                        height: focusHeight * (!detailedView ? 0.3 : 0.48),
+                        width: focusWidth,
+                        color: Colors.grey[800],
+                        child: !detailedView
+                            ? SingleChildScrollView(
+                                reverse: true,
+                                child: CommentsBlock(
+                                  comments: comments,
+                                  userRecord: state.userRecord,
+                                  photoMemo: m,
+                                ),
+                              )
+                            : DetailedView(
+                                photoMemo: m,
+                                commentCount: commentCount,
+                                ownerUsername: photoMemoOwner.username,
+                              ),
+                      ),
+                      !detailedView
+                          ? Container(
+                              height: focusHeight * 0.18,
+                              width: focusWidth,
+                              color: Colors.grey[800],
+                              child: Column(
+                                children: [
+                                  Divider(),
+                                  Form(
+                                    key: state.formKey,
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                margin:
+                                                    EdgeInsets.only(left: 10.0),
+                                                width: focusWidth * 0.75,
+                                                child: TextFormField(
+                                                  decoration: InputDecoration(
+                                                    hintText:
+                                                        'Leave a comment!',
+                                                  ),
+                                                  autocorrect: true,
+                                                  obscureText: false,
+                                                  validator: validateComment,
+                                                  onSaved: saveComment,
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 12.0, left: 10.0),
+                                                child: ClipOval(
+                                                  child: Container(
+                                                    color:
+                                                        Theme.of(state.context)
+                                                            .primaryColor,
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        Icons
+                                                            .arrow_forward_rounded,
+                                                      ),
+                                                      iconSize: 30.0,
+                                                      onPressed: () {
+                                                        uploadComment(m);
+                                                        setState(() => comments
+                                                            .add(tempComment));
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : SizedBox(),
                     ],
                   ),
                 ],
