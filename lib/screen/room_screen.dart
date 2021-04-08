@@ -51,7 +51,8 @@ class _RoomScreenState extends State<RoomScreen> {
     userRecord ??= args[Constant.ARG_USERRECORD];
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
 
-    print('========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
+    print(
+        '========================= MEMEBER PROFILE PIC URLS = $memberProfilePicURLS');
 
     return Scaffold(
       appBar: AppBar(
@@ -82,14 +83,15 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () =>
-            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
-          Constant.ARG_USER: user,
-          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-          Constant.ARG_ROOM: room,
-          Constant.ARG_PHOTOMEMOLIST: photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: roomMemos,
-        }),
+        onPressed: () => Navigator.pushNamed(
+            context, AddPhotoMemoScreen.routeName,
+            arguments: {
+              Constant.ARG_USER: user,
+              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+              Constant.ARG_ROOM: room,
+              Constant.ARG_PHOTOMEMOLIST: photoMemos,
+              Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            }),
       ),
       body: con.generateWall(),
     );
@@ -234,6 +236,13 @@ class _Controller {
   void focusMemoView(PhotoMemo m) async {
     try {
       comments = await FirebaseController.getComments(memo: m);
+      // getting comment owner username from firebase
+      for (var c in comments) {
+        UserRecord userR =
+            await FirebaseController.getUserRecord(email: c.commentOwnerEmail);
+        c.username = userR.username;
+        c.profilePicURL = userR.profilePictureURL;
+      }
     } catch (e) {
       MyDialog.info(
         context: state.context,
@@ -263,8 +272,8 @@ class _Controller {
                         child: FittedBox(
                             fit: BoxFit.cover,
                             clipBehavior: Clip.hardEdge,
-                            child:
-                                MyImage.network(url: m.photoURL, context: state.context)),
+                            child: MyImage.network(
+                                url: m.photoURL, context: state.context)),
                       ),
                       Container(
                         height: focusHeight * 0.3,
@@ -311,7 +320,8 @@ class _Controller {
                                               top: 12.0, left: 10.0),
                                           child: ClipOval(
                                             child: Container(
-                                              color: Theme.of(state.context).primaryColor,
+                                              color: Theme.of(state.context)
+                                                  .primaryColor,
                                               child: IconButton(
                                                 icon: Icon(
                                                   Icons.arrow_forward_rounded,
@@ -319,8 +329,8 @@ class _Controller {
                                                 iconSize: 30.0,
                                                 onPressed: () {
                                                   uploadComment(m);
-                                                  setState(
-                                                      () => comments.add(tempComment));
+                                                  setState(() => comments
+                                                      .add(tempComment));
                                                 },
                                               ),
                                             ),
@@ -359,7 +369,8 @@ class _Controller {
         message: message,
         datePosted: DateTime.now(),
       );
-      tempComment.docID = await FirebaseController.addComment(tempComment, memo);
+      tempComment.docID =
+          await FirebaseController.addComment(tempComment, memo);
       state.formKey.currentState.reset();
     } catch (e) {
       MyDialog.info(

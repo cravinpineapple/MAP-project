@@ -101,7 +101,8 @@ class _ProfileState extends State<SettingsScreen> {
                                 child: PopupMenuButton<String>(
                                   icon: Icon(Icons.photo),
                                   onSelected: con.getPhoto,
-                                  itemBuilder: (context) => <PopupMenuEntry<String>>[
+                                  itemBuilder: (context) =>
+                                      <PopupMenuEntry<String>>[
                                     PopupMenuItem(
                                       value: Constant.SRC_CAMERA,
                                       child: Row(
@@ -241,20 +242,17 @@ class _Controller {
                 state.progressMessage = null;
               else {
                 progress *= 100;
-                state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
+                state.progressMessage =
+                    'Uploading: ' + progress.toStringAsFixed(1) + '%';
               }
             });
           },
         );
-        // SHOULD delete old profile picture
-        // if (tempUserRecord.profilePicFileName != null)
-        //   await FirebaseStorage.instance
-        //       .ref(tempUserRecord.profilePicFileName)
-        //       .delete();
         tempUserRecord.profilePictureURL = photoInfo[Constant.ARG_DOWNLOADURL];
       }
 
-      await FirebaseController.updateUserProfileInformation(userRecord: tempUserRecord);
+      await FirebaseController.updateUserProfileInformation(
+          userRecord: tempUserRecord);
 
       state.render(() => state.userRecord.assign(tempUserRecord));
       state.editMode = false;
@@ -311,7 +309,8 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null) return; // selection from camera/gallery was canceled
+      if (_imageFile == null)
+        return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(

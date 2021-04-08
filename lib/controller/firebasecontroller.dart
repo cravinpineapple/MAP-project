@@ -13,7 +13,8 @@ import 'package:lesson3part1/model/userrecord.dart';
 import '../model/constant.dart';
 
 class FirebaseController {
-  static Future<User> signIn({@required String email, @required String password}) async {
+  static Future<User> signIn(
+      {@required String email, @required String password}) async {
     UserCredential userCredential =
         await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -54,7 +55,8 @@ class FirebaseController {
       listener(progress);
     });
     await task;
-    String downloadURL = await FirebaseStorage.instance.ref(fileName).getDownloadURL();
+    String downloadURL =
+        await FirebaseStorage.instance.ref(fileName).getDownloadURL();
     return <String, String>{
       Constant.ARG_DOWNLOADURL: downloadURL,
       Constant.ARG_FILENAME: fileName,
@@ -63,7 +65,8 @@ class FirebaseController {
 
   static Future<bool> checkIfUserExists({@required String email}) async {
     try {
-      List<String> temp = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      List<String> temp =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
       print('============= checkIfUserExists - list size: ${temp.length}');
       return temp.length > 0;
     } catch (error) {
@@ -161,7 +164,8 @@ class FirebaseController {
         .delete();
   }
 
-  static Future<List<PhotoMemo>> getPhotoMemoList({@required String email}) async {
+  static Future<List<PhotoMemo>> getPhotoMemoList(
+      {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.CREATED_BY, isEqualTo: email)
@@ -192,7 +196,8 @@ class FirebaseController {
     return result;
   }
 
-  static Future<DocumentSnapshot> getPhotoMemoSnapshot({@required String docID}) async {
+  static Future<DocumentSnapshot> getPhotoMemoSnapshot(
+      {@required String docID}) async {
     DocumentSnapshot docSnap = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .doc(docID)
@@ -230,10 +235,14 @@ class FirebaseController {
     // TODO: delete photos from room as well.
   }
 
-  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
-    final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
-    final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
-    final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
+  static Future<List<dynamic>> getImageLabels(
+      {@required File photoFile}) async {
+    final FirebaseVisionImage visionImage =
+        FirebaseVisionImage.fromFile(photoFile);
+    final ImageLabeler cloudLabeler =
+        FirebaseVision.instance.cloudImageLabeler();
+    final List<ImageLabel> cloudLabels =
+        await cloudLabeler.processImage(visionImage);
 
     List<dynamic> labels = <dynamic>[];
 
@@ -287,13 +296,14 @@ class FirebaseController {
         .get();
 
     var results = <PhotoMemo>[];
-    querySnapshot.docs
-        .forEach((doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
+    querySnapshot.docs.forEach(
+        (doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
 
     return results;
   }
 
-  static Future<String> createUserRecord({@required UserRecord userRecord}) async {
+  static Future<String> createUserRecord(
+      {@required UserRecord userRecord}) async {
     var ref = await FirebaseFirestore.instance
         .collection(Constant.USERRECORD_COLLECTION)
         .add(userRecord.serialize());
@@ -308,8 +318,8 @@ class FirebaseController {
         .get();
 
     UserRecord userRecord;
-    querySnapshot.docs
-        .forEach((doc) => userRecord = UserRecord.deserialize(doc.data(), doc.id));
+    querySnapshot.docs.forEach(
+        (doc) => userRecord = UserRecord.deserialize(doc.data(), doc.id));
     return userRecord;
   }
 
@@ -323,13 +333,14 @@ class FirebaseController {
           .where(UserRecord.EMAIL, isEqualTo: e)
           .get();
 
-      querySnapshot.docs.forEach((doc) =>
-          result[e] = UserRecord.deserialize(doc.data(), doc.id).profilePictureURL);
+      querySnapshot.docs.forEach((doc) => result[e] =
+          UserRecord.deserialize(doc.data(), doc.id).profilePictureURL);
     }
     return result;
   }
 
-  static Future<void> updateUserProfileInformation({UserRecord userRecord}) async {
+  static Future<void> updateUserProfileInformation(
+      {UserRecord userRecord}) async {
     FirebaseFirestore.instance
         .collection(Constant.USERRECORD_COLLECTION)
         .doc(userRecord.docID)

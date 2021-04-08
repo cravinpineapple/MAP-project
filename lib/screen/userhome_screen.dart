@@ -133,8 +133,8 @@ class _UserHomeState extends State<UserHomeScreen> {
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text('Settings'),
-                onTap: () {
-                  Navigator.pushNamed(
+                onTap: () async {
+                  await Navigator.pushNamed(
                     context,
                     SettingsScreen.routeName,
                     arguments: {

@@ -58,6 +58,7 @@ class _Controller {
   DateFormat formatter = DateFormat('EEE, M/d/y H:mm');
 
   List<Widget> buildCommentList() {
+    print('====== test');
     return state.comments
         .map(
           (e) => Column(
@@ -85,15 +86,17 @@ class _Controller {
                               child: Text(
                                 e.username,
                                 style: TextStyle(
-                                    color: Theme.of(state.context).primaryColor),
+                                    color:
+                                        Theme.of(state.context).primaryColor),
                               )),
                           Wrap(
                             children: [
                               Container(
                                   child: Text(
                                 e.message,
-                                style: TextStyle(
-                                    fontFeatures: [FontFeature.tabularFigures()]),
+                                style: TextStyle(fontFeatures: [
+                                  FontFeature.tabularFigures()
+                                ]),
                               )),
                             ],
                           ),
