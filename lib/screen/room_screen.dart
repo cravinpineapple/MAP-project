@@ -239,8 +239,6 @@ class _Controller {
     UserRecord photoMemoOwner;
     try {
       comments = await FirebaseController.getComments(memo: m);
-      commentCount =
-          await FirebaseController.getPhotomemoCommentCount(photoMemo: m);
       photoMemoOwner =
           await FirebaseController.getUserRecord(email: m.createdBy);
       // getting comment owner username & profile pic from firebase
@@ -259,6 +257,7 @@ class _Controller {
     }
     var focusWidth = MediaQuery.of(state.context).size.width * 0.8;
     var focusHeight = MediaQuery.of(state.context).size.height * 0.8;
+    detailedView = false;
     showDialog(
       context: state.context,
       builder: (context) => StatefulBuilder(
@@ -309,8 +308,11 @@ class _Controller {
                                     .withOpacity(0.8),
                                 size: !detailedView ? 50.0 : 40.0,
                               ),
-                              onPressed: () =>
-                                  setState(() => detailedView = !detailedView),
+                              onPressed: () async {
+                                commentCount = await FirebaseController
+                                    .getPhotomemoCommentCount(photoMemo: m);
+                                setState(() => detailedView = !detailedView);
+                              },
                             ),
                           ),
                         ],
