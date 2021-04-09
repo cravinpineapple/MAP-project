@@ -114,7 +114,7 @@ class _Controller {
   }
 
   void saveEmail(String value) {
-    email = value;
+    email = value.toLowerCase();
   }
 
   String validatePassword(String value) {
