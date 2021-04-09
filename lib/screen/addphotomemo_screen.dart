@@ -112,7 +112,8 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage,
+                      style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -167,6 +168,7 @@ class _Controller {
 
     try {
       Map photoInfo = await FirebaseController.uploadPhotoFile(
+        profilePic: false,
         photo: state.photo,
         uid: state.user.uid,
         listener: (double progress) {
@@ -175,7 +177,8 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage =
+                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
@@ -193,18 +196,20 @@ class _Controller {
       tempMemo.timestamp = DateTime.now();
       tempMemo.createdBy = state.user.email;
       tempMemo.imageLabels = imageLabels;
+      if (state.room != null) tempMemo.roomMembers.addAll(state.room.members);
       String docID = await FirebaseController.addPhotoMemo(tempMemo);
       tempMemo.docID = docID;
-      state.photoMemoList.insert(0, tempMemo);
-      state.roomActualPhotoMemos.add(tempMemo);
 
       if (state.room != null) {
+        state.roomActualPhotoMemos.add(tempMemo);
         state.room.memos.add(docID);
         await FirebaseController.updateRoom(
           emails: state.room.members,
           room: state.room,
         );
       }
+
+      state.photoMemoList.insert(0, tempMemo);
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pop(state.context); // return to user home screen
@@ -233,7 +238,8 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null) return; // selection from camera/gallery was canceled
+      if (_imageFile == null)
+        return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -254,7 +260,8 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith =
+          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }

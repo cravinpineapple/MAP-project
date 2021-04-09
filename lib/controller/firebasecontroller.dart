@@ -5,13 +5,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:lesson3part1/model/comment.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 
 import '../model/constant.dart';
 
 class FirebaseController {
-  static Future<User> signIn({@required String email, @required String password}) async {
+  static Future<User> signIn(
+      {@required String email, @required String password}) async {
     UserCredential userCredential =
         await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -38,8 +41,13 @@ class FirebaseController {
     String fileName,
     @required String uid,
     @required Function listener,
+    @required bool profilePic,
   }) async {
-    fileName ??= '${Constant.PHOTOIMAGE_FOLDER}/$uid/${DateTime.now()}';
+    if (profilePic)
+      fileName ??= '${Constant.PROFILEPIC_FOLDER}/$uid/${DateTime.now()}';
+    else
+      fileName ??= '${Constant.PHOTOIMAGE_FOLDER}/$uid/${DateTime.now()}';
+
     UploadTask task = FirebaseStorage.instance.ref(fileName).putFile(photo);
     task.snapshotEvents.listen((TaskSnapshot event) {
       double progress = event.bytesTransferred / event.totalBytes;
@@ -47,7 +55,8 @@ class FirebaseController {
       listener(progress);
     });
     await task;
-    String downloadURL = await FirebaseStorage.instance.ref(fileName).getDownloadURL();
+    String downloadURL =
+        await FirebaseStorage.instance.ref(fileName).getDownloadURL();
     return <String, String>{
       Constant.ARG_DOWNLOADURL: downloadURL,
       Constant.ARG_FILENAME: fileName,
@@ -56,7 +65,8 @@ class FirebaseController {
 
   static Future<bool> checkIfUserExists({@required String email}) async {
     try {
-      List<String> temp = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      List<String> temp =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
       print('============= checkIfUserExists - list size: ${temp.length}');
       return temp.length > 0;
     } catch (error) {
@@ -108,16 +118,6 @@ class FirebaseController {
         'Update Owner Failed in Firebase Controller. ERROR: $error',
       ),
     );
-
-    /*
-
-    String docID, Map<String, dynamic> updateInfo) async {
-    await FirebaseFirestore.instance
-        .collection(Constant.PHOTOMEMO_COLLECTION)
-        .doc(docID)
-        .update(updateInfo);
-    */
-    // roomCollection.doc(room.docID)
   }
 
   static Future<String> addRoom(Room room) async {
@@ -128,7 +128,44 @@ class FirebaseController {
     return ref.id;
   }
 
-  static Future<List<PhotoMemo>> getPhotoMemoList({@required String email}) async {
+  static Future<String> addComment(Comment comment, PhotoMemo memo) async {
+    var ref = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(memo.docID)
+        .collection(Constant.COMMENTS_COLLECTION)
+        .add(comment.serialize());
+
+    return ref.id;
+  }
+
+  static Future<List<Comment>> getComments({@required PhotoMemo memo}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(memo.docID)
+        .collection(Constant.COMMENTS_COLLECTION)
+        .orderBy(Comment.DATE_POSTED, descending: false)
+        .get();
+
+    List<Comment> comments = [];
+    querySnapshot.docs.forEach((comment) {
+      comments.add(Comment.deserialize(comment.data(), comment.id));
+    });
+
+    return comments;
+  }
+
+  static Future<void> deleteComment(
+      {@required Comment comment, @required PhotoMemo photoMemo}) async {
+    await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(photoMemo.docID)
+        .collection(Constant.COMMENTS_COLLECTION)
+        .doc(comment.docID)
+        .delete();
+  }
+
+  static Future<List<PhotoMemo>> getPhotoMemoList(
+      {@required String email}) async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .where(PhotoMemo.CREATED_BY, isEqualTo: email)
@@ -159,7 +196,8 @@ class FirebaseController {
     return result;
   }
 
-  static Future<DocumentSnapshot> getPhotoMemoSnapshot({@required String docID}) async {
+  static Future<DocumentSnapshot> getPhotoMemoSnapshot(
+      {@required String docID}) async {
     DocumentSnapshot docSnap = await FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .doc(docID)
@@ -197,10 +235,14 @@ class FirebaseController {
     // TODO: delete photos from room as well.
   }
 
-  static Future<List<dynamic>> getImageLabels({@required File photoFile}) async {
-    final FirebaseVisionImage visionImage = FirebaseVisionImage.fromFile(photoFile);
-    final ImageLabeler cloudLabeler = FirebaseVision.instance.cloudImageLabeler();
-    final List<ImageLabel> cloudLabels = await cloudLabeler.processImage(visionImage);
+  static Future<List<dynamic>> getImageLabels(
+      {@required File photoFile}) async {
+    final FirebaseVisionImage visionImage =
+        FirebaseVisionImage.fromFile(photoFile);
+    final ImageLabeler cloudLabeler =
+        FirebaseVision.instance.cloudImageLabeler();
+    final List<ImageLabel> cloudLabels =
+        await cloudLabeler.processImage(visionImage);
 
     List<dynamic> labels = <dynamic>[];
 
@@ -254,11 +296,91 @@ class FirebaseController {
         .get();
 
     var results = <PhotoMemo>[];
-    querySnapshot.docs
-        .forEach((doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
+    querySnapshot.docs.forEach(
+        (doc) => results.add(PhotoMemo.deserialize(doc.data(), doc.id)));
 
     return results;
   }
 
-  static Future<String> getRoomDocID(String name) async {}
+  static Future<int> getPhotomemoCommentCount(
+      {@required PhotoMemo photoMemo}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(photoMemo.docID)
+        .collection(Constant.COMMENTS_COLLECTION)
+        .get();
+
+    return querySnapshot.size;
+  }
+
+  static Future<String> createUserRecord(
+      {@required UserRecord userRecord}) async {
+    var ref = await FirebaseFirestore.instance
+        .collection(Constant.USERRECORD_COLLECTION)
+        .add(userRecord.serialize());
+
+    return ref.id;
+  }
+
+  static Future<UserRecord> getUserRecord({@required String email}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection(Constant.USERRECORD_COLLECTION)
+        .where(UserRecord.EMAIL, isEqualTo: email)
+        .get();
+
+    UserRecord userRecord;
+    querySnapshot.docs.forEach(
+        (doc) => userRecord = UserRecord.deserialize(doc.data(), doc.id));
+    return userRecord;
+  }
+
+  // UserRecord U
+  //  result[u.email] = result[u.username]
+  static Future<Map<String, String>> getUserRecordList(
+      {@required List<dynamic> roomMemberList}) async {
+    Map<String, String> result = {};
+    for (var m in roomMemberList) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(Constant.USERRECORD_COLLECTION)
+          .where(UserRecord.EMAIL, isEqualTo: m)
+          .get();
+
+      querySnapshot.docs.forEach((doc) {
+        result[m] = UserRecord.deserialize(doc.data(), doc.id).username;
+      });
+    }
+
+    return result;
+  }
+
+  static Future<Map> getRoomMemberProfilePicURLs({
+    @required List<dynamic> roomMemberList,
+  }) async {
+    Map<String, String> result = {};
+    for (var e in roomMemberList) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(Constant.USERRECORD_COLLECTION)
+          .where(UserRecord.EMAIL, isEqualTo: e)
+          .get();
+
+      querySnapshot.docs.forEach((doc) => result[e] =
+          UserRecord.deserialize(doc.data(), doc.id).profilePictureURL);
+    }
+    return result;
+  }
+
+  static Future<void> updateUserProfileInformation(
+      {UserRecord userRecord}) async {
+    FirebaseFirestore.instance
+        .collection(Constant.USERRECORD_COLLECTION)
+        .doc(userRecord.docID)
+        .update(
+      {
+        UserRecord.AGE: userRecord.age,
+        UserRecord.EMAIL: userRecord.email,
+        UserRecord.PROFILE_PICTURE_URL: userRecord.profilePictureURL,
+        UserRecord.USERNAME: userRecord.username,
+      },
+    );
+  }
 }

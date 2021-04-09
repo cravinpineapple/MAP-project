@@ -4,6 +4,7 @@ import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/signup_screen.dart';
 import 'package:lesson3part1/screen/userhome_screen.dart';
@@ -48,7 +49,7 @@ class _SignInState extends State<SignInScreen> {
             child: Column(
               children: [
                 Text(
-                  'PhotoMemo',
+                  'memoroom',
                   style: TextStyle(
                     fontFamily: 'DotGothic',
                     fontSize: 60.0,
@@ -144,8 +145,8 @@ class _Controller {
       user = await FirebaseController.signIn(email: email, password: password);
       print('============ ${user.email}');
     } catch (e) {
-      MyDialog.circularProgressStop(
-          state.context); // must make sure to stop load symbol in all possible paths
+      MyDialog.circularProgressStop(state
+          .context); // must make sure to stop load symbol in all possible paths
       MyDialog.info(
         context: state.context,
         title: 'Sign In Error',
@@ -158,7 +159,10 @@ class _Controller {
     try {
       List<PhotoMemo> photoMemoList =
           await FirebaseController.getPhotoMemoList(email: user.email);
-      List<Room> roomList = await FirebaseController.getRoomList(email: user.email);
+      List<Room> roomList =
+          await FirebaseController.getRoomList(email: user.email);
+      UserRecord userRecord =
+          await FirebaseController.getUserRecord(email: user.email);
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
@@ -168,6 +172,7 @@ class _Controller {
           Constant.ARG_USER: user,
           Constant.ARG_PHOTOMEMOLIST: photoMemoList,
           Constant.ARG_ROOMLIST: roomList,
+          Constant.ARG_USERRECORD: userRecord,
         },
       );
     } catch (e) {

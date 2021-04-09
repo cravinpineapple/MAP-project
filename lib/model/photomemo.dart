@@ -9,6 +9,7 @@ class PhotoMemo {
   DateTime timestamp;
   List<dynamic>
       sharedWith; // list of emails (dynamic gives better compatibility with Firestore)
+  List<dynamic> roomMembers;
   List<dynamic> imageLabels;
 
   // key for  Firestore documents
@@ -21,6 +22,7 @@ class PhotoMemo {
   static const SHARED_WITH = 'sharedWith';
   static const IMAGE_LABELS = 'imageLabels';
   static const ROOM_NAME = 'roomName';
+  static const ROOM_MEMBERS = 'roomMembers';
 
   PhotoMemo({
     this.docID,
@@ -32,9 +34,11 @@ class PhotoMemo {
     this.photoURL,
     this.timestamp,
     this.sharedWith,
+    this.roomMembers,
     this.imageLabels,
   }) {
     this.sharedWith ??= [];
+    this.roomMembers ??= [];
     this.imageLabels ??= [];
   }
 
@@ -53,6 +57,8 @@ class PhotoMemo {
     //    references to a list
     this.sharedWith = [];
     this.sharedWith.addAll(p.sharedWith);
+    this.roomMembers = [];
+    this.roomMembers.addAll(p.roomMembers);
     this.imageLabels = [];
     this.imageLabels.addAll(p.imageLabels);
   }
@@ -73,6 +79,8 @@ class PhotoMemo {
     //    references to a list
     this.sharedWith.clear();
     this.sharedWith.addAll(p.sharedWith);
+    this.roomMembers.clear();
+    this.roomMembers.addAll(p.roomMembers);
     this.imageLabels.clear();
     this.imageLabels.addAll(p.imageLabels);
   }
@@ -87,6 +95,7 @@ class PhotoMemo {
       PHOTO_FILENAME: this.photoFilename,
       PHOTO_URL: this.photoURL,
       SHARED_WITH: this.sharedWith,
+      ROOM_MEMBERS: this.roomMembers,
       TIMESTAMP: this.timestamp,
       IMAGE_LABELS: this.imageLabels,
     };
@@ -103,10 +112,12 @@ class PhotoMemo {
       photoFilename: doc[PHOTO_FILENAME],
       photoURL: doc[PHOTO_URL],
       sharedWith: doc[SHARED_WITH],
+      roomMembers: doc[ROOM_MEMBERS],
       imageLabels: doc[IMAGE_LABELS],
       timestamp: doc[TIMESTAMP] == null
           ? null
-          : DateTime.fromMillisecondsSinceEpoch(doc[TIMESTAMP].millisecondsSinceEpoch),
+          : DateTime.fromMillisecondsSinceEpoch(
+              doc[TIMESTAMP].millisecondsSinceEpoch),
     );
   }
 
@@ -129,7 +140,8 @@ class PhotoMemo {
     if (value == null || value.trim().length == 0) return null;
 
     // sharing with people
-    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    List<String> emailList =
+        value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     for (String email in emailList) {
       if (email.contains('@') && email.contains('.'))
         continue;

@@ -15,6 +15,7 @@ class MyImage {
               : null,
         );
       },
+      fit: BoxFit.cover,
     );
   }
 }

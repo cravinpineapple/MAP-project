@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/room_screen.dart';
 
@@ -15,11 +16,13 @@ class MyRoomList extends StatefulWidget {
   final List<Room> roomList;
   final User user;
   final List<PhotoMemo> photoMemos;
+  final UserRecord userRecord;
 
   MyRoomList({
     @required this.roomList,
     @required this.user,
     @required this.photoMemos,
+    @required this.userRecord,
   });
 
   @override
@@ -34,6 +37,7 @@ class _MyRoomListState extends State<MyRoomList> {
   List<PhotoMemo> photoMemos;
   _Controller con;
   User user;
+  UserRecord userRecord;
 
   @override
   void initState() {
@@ -41,6 +45,8 @@ class _MyRoomListState extends State<MyRoomList> {
     roomList = widget.roomList;
     user = widget.user;
     photoMemos = widget.photoMemos;
+    userRecord = widget.userRecord;
+
     con = _Controller(this);
     _scrollController = ScrollController();
   }
@@ -51,12 +57,16 @@ class _MyRoomListState extends State<MyRoomList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      isAlwaysShown: false,
-      // controller: _scrollController,
-      child: SingleChildScrollView(
-        child: Column(
-          children: con.generateRoomList(),
+    return Container(
+      height: roomList.length <= 5 ? roomList.length * 50.0 : 250.0,
+      color: Color(0x545454),
+      child: Scrollbar(
+        isAlwaysShown: false,
+        // controller: _scrollController,
+        child: SingleChildScrollView(
+          child: Column(
+            children: con.generateRoomList(),
+          ),
         ),
       ),
     );
@@ -93,7 +103,12 @@ class _Controller {
       memos = await FirebaseController.getRoomPhotoMemoList(
         photoMemoList: e.memos,
       );
-      print(memos);
+      Map memberUsernames =
+          await FirebaseController.getUserRecordList(roomMemberList: e.members);
+      Map urls = await FirebaseController.getRoomMemberProfilePicURLs(
+        roomMemberList: e.members,
+      );
+      print('======================= URLS = $urls');
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
         state.context,
@@ -102,7 +117,10 @@ class _Controller {
           Constant.ARG_ROOM: e,
           Constant.ARG_USER: state.user,
           Constant.ARG_PHOTOMEMOLIST: state.photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: memos
+          Constant.ARG_ROOM_MEMOLIST: memos,
+          Constant.ARG_USERRECORD: state.userRecord,
+          Constant.ARG_USER_PROFILE_URL_MAP: urls,
+          Constant.USER_USERNAME_MAP: memberUsernames,
         },
       );
     } catch (e) {
@@ -251,8 +269,10 @@ class _Controller {
         FirebaseController.changeOwner(room, ownerUpdate);
         state.render(
           () {
-            state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).owner =
-                ownerUpdate;
+            state.roomList
+                .where((e) => e.roomName == room.roomName)
+                .elementAt(0)
+                .owner = ownerUpdate;
           },
         );
         changeConfirmationDialog(success: ownerChangeBool);
@@ -352,7 +372,6 @@ class _Controller {
     formKey.currentState.save();
 
     // NOW WE HAVE THE LIST
-
     Navigator.pop(state.context);
     Navigator.pop(state.context);
 
@@ -372,8 +391,21 @@ class _Controller {
       for (var e in remover) {
         membersUpdate.remove(e);
       }
+      List<PhotoMemo> roomPhotoMemos =
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
       if (usersExist) {
         print('################################### ${room.docID}');
+
+        // ====== ADDING NEW ROOM MEMBERS TO EACH PHOTOMEMO IN ROOM ======
+        // locally
+        for (var m in roomPhotoMemos) m.roomMembers.addAll(membersUpdate);
+        // updates firebase
+        for (var m in roomPhotoMemos)
+          FirebaseController.updatePhotoMemo(
+              m.docID, {PhotoMemo.ROOM_MEMBERS: m.roomMembers});
+        // ===============================================================
+
         room.members.addAll(membersUpdate);
         FirebaseController.updateRoom(
           emails: room.members,
@@ -409,15 +441,29 @@ class _Controller {
       print('################################### ${room.docID}');
       print('roomMembersList: ${room.members}');
       print('memberUpdate: $membersUpdate');
-      for (String m in membersUpdate) {
-        if (m == room.owner) {
-          changeConfirmationDialog(success: false, reason: 'You cannot remove yourself');
-          return;
-        }
 
+      List<PhotoMemo> roomPhotoMemos =
+          await FirebaseController.getRoomPhotoMemoList(
+              photoMemoList: room.memos);
+
+      if (membersUpdate.contains(room.owner)) {
+        changeConfirmationDialog(
+            success: false, reason: 'You cannot remove yourself');
+        return;
+      }
+
+      for (String m in membersUpdate) {
         room.members.remove(m);
       }
-      print('updatedRoomMembersList: ${room.members}');
+
+      // ====== ADDING NEW ROOM MEMBERS TO EACH PHOTOMEMO IN ROOM ======
+      // locally
+      for (var m in roomPhotoMemos) m.roomMembers = room.members;
+      // updates firebase
+      for (var m in roomPhotoMemos)
+        FirebaseController.updatePhotoMemo(
+            m.docID, {PhotoMemo.ROOM_MEMBERS: m.roomMembers});
+      // ===============================================================
 
       FirebaseController.updateRoom(
         emails: room.members,
@@ -425,8 +471,10 @@ class _Controller {
       );
       state.render(
         () {
-          state.roomList.where((e) => e.roomName == room.roomName).elementAt(0).members =
-              room.members;
+          state.roomList
+              .where((e) => e.roomName == room.roomName)
+              .elementAt(0)
+              .members = room.members;
         },
       );
       changeConfirmationDialog(success: true);
@@ -542,7 +590,6 @@ class _Controller {
           FirebaseController.updateRoom(emails: room.members, room: room);
         }
       } else {
-        // TODO: leaving room as non-owner
         room.members.remove(state.user.email);
         state.roomList.remove(room);
         FirebaseController.updateRoom(emails: room.members, room: room);
@@ -559,7 +606,8 @@ class _Controller {
     @required bool success,
     String reason = '',
   }) {
-    String msg = 'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
+    String msg =
+        'Room Update ' + (success ? 'Success:\n' : 'Failed:\n') + reason;
 
     showDialog(
       context: state.context,

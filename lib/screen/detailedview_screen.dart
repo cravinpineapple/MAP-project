@@ -186,6 +186,7 @@ class _Controller {
 
       if (photoFile != null) {
         Map photoInfo = await FirebaseController.uploadPhotoFile(
+          profilePic: false,
           photo: photoFile,
           uid: state.user.uid,
           fileName: state.onePhotoMemoTemp.photoFilename,

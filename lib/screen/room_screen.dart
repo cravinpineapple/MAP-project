@@ -2,11 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/comment.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
+import 'package:lesson3part1/screen/myview/mycomments.dart';
+import 'package:lesson3part1/screen/myview/mydetailedview.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/myview/myimage.dart';
+import 'package:lesson3part1/screen/myview/profilepic.dart';
 
 import '../model/constant.dart';
 
@@ -23,8 +28,12 @@ class _RoomScreenState extends State<RoomScreen> {
   _Controller con;
   Room room;
   User user;
+  UserRecord userRecord;
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
+  Map<String, String> memberProfilePicURLS;
+  Map<dynamic, dynamic> memberUsernames;
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -41,10 +50,17 @@ class _RoomScreenState extends State<RoomScreen> {
     user ??= args[Constant.ARG_USER];
     photoMemos ??= args[Constant.ARG_PHOTOMEMOLIST];
     roomMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
+    userRecord ??= args[Constant.ARG_USERRECORD];
+    memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
+    memberUsernames ??= args[Constant.USER_USERNAME_MAP];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(room.roomName),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           // SOLUTION for changing the icon of end drawer found from:
           // https://stackoverflow.com/questions/51957960/how-to-change-the-enddrawer-icon-in-flutter
@@ -67,14 +83,15 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () =>
-            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
-          Constant.ARG_USER: user,
-          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-          Constant.ARG_ROOM: room,
-          Constant.ARG_PHOTOMEMOLIST: photoMemos,
-          Constant.ARG_ROOM_MEMOLIST: roomMemos,
-        }),
+        onPressed: () => Navigator.pushNamed(
+            context, AddPhotoMemoScreen.routeName,
+            arguments: {
+              Constant.ARG_USER: user,
+              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+              Constant.ARG_ROOM: room,
+              Constant.ARG_PHOTOMEMOLIST: photoMemos,
+              Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            }),
       ),
       body: con.generateWall(),
     );
@@ -84,6 +101,11 @@ class _RoomScreenState extends State<RoomScreen> {
 class _Controller {
   _RoomScreenState state;
   _Controller(this.state);
+  final double profilePicSize = 30.0;
+  String message = '';
+  List<Comment> comments = [];
+  Comment tempComment;
+  bool detailedView = false;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -105,7 +127,6 @@ class _Controller {
         height: 56.0,
         color: Colors.grey[800],
         child: Text(
-          // TODO: SET ROOM NAME TO A LENGTH LIMIT
           'Members',
           style: TextStyle(
             color: Colors.black,
@@ -115,7 +136,33 @@ class _Controller {
         ),
       ),
     );
+    w.add(
+      Container(
+        padding: EdgeInsets.only(left: 10.0),
+        margin: EdgeInsets.all(10.0),
+        height: 50.0,
+        color: Colors.grey[800],
+        child: Row(
+          children: [
+            ProfilePic(
+              profilePicSize: profilePicSize,
+              url: state.memberProfilePicURLS[state.room.owner],
+            ),
+            SizedBox(width: 20.0),
+            Text(
+              state.memberUsernames[state.room.owner],
+              style: TextStyle(fontSize: 20.0),
+            ),
+            Icon(
+              Icons.star,
+              color: Colors.amber,
+            ),
+          ],
+        ),
+      ),
+    );
     for (var m in state.room.members) {
+      if (m == state.room.owner) continue;
       w.add(
         Container(
           padding: EdgeInsets.only(left: 10.0),
@@ -124,13 +171,13 @@ class _Controller {
           color: Colors.grey[800],
           child: Row(
             children: [
-              Icon(
-                Icons.person,
-                size: 30.0,
+              ProfilePic(
+                profilePicSize: profilePicSize,
+                url: state.memberProfilePicURLS[m],
               ),
               SizedBox(width: 20.0),
               Text(
-                m,
+                state.memberUsernames[m],
                 style: TextStyle(fontSize: 20.0),
               ),
             ],
@@ -157,10 +204,11 @@ class _Controller {
           width: width,
           height: width,
           child: FittedBox(
-            fit: BoxFit.fitWidth,
-            child: FlatButton(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: MaterialButton(
               child: MyImage.network(url: m.photoURL, context: state.context),
-              onPressed: null,
+              onPressed: () => focusMemoView(m),
             ),
           ),
           color: Colors.transparent,
@@ -186,5 +234,214 @@ class _Controller {
     return w;
   }
 
-  void addPhotoMemo() {}
+  void focusMemoView(PhotoMemo m) async {
+    int commentCount;
+    UserRecord photoMemoOwner;
+    try {
+      comments = await FirebaseController.getComments(memo: m);
+      photoMemoOwner =
+          await FirebaseController.getUserRecord(email: m.createdBy);
+      // getting comment owner username & profile pic from firebase
+      for (var c in comments) {
+        UserRecord userR =
+            await FirebaseController.getUserRecord(email: c.commentOwnerEmail);
+        c.username = userR.username;
+        c.profilePicURL = userR.profilePictureURL;
+      }
+    } catch (e) {
+      MyDialog.info(
+        context: state.context,
+        title: 'Get Comments Error',
+        content: '$e',
+      );
+    }
+    var focusWidth = MediaQuery.of(state.context).size.width * 0.8;
+    var focusHeight = MediaQuery.of(state.context).size.height * 0.8;
+    detailedView = false;
+    showDialog(
+      context: state.context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            contentPadding: EdgeInsets.all(0.0),
+            backgroundColor: Colors.transparent,
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Column(
+                    children: [
+                      SizedBox(height: 0.0),
+                      Stack(
+                        children: [
+                          Container(
+                            height: focusWidth,
+                            width: focusWidth,
+                            color: Colors.transparent,
+                            child: FittedBox(
+                                fit: BoxFit.cover,
+                                clipBehavior: Clip.hardEdge,
+                                child: MyImage.network(
+                                    url: m.photoURL, context: state.context)),
+                          ),
+                          Positioned(
+                            right: 3.0,
+                            bottom: 3.0,
+                            width: 40.0,
+                            height: 40.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: Colors.grey[600].withOpacity(0.7),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: !detailedView ? 8.0 : 4.0,
+                            bottom: !detailedView ? 8.0 : 4.0,
+                            child: IconButton(
+                              icon: Icon(
+                                !detailedView
+                                    ? Icons.analytics_outlined
+                                    : Icons.comment_outlined,
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.8),
+                                size: !detailedView ? 50.0 : 40.0,
+                              ),
+                              onPressed: () async {
+                                commentCount = await FirebaseController
+                                    .getPhotomemoCommentCount(photoMemo: m);
+                                setState(() => detailedView = !detailedView);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        height: focusHeight * (!detailedView ? 0.3 : 0.48),
+                        width: focusWidth,
+                        color: Colors.grey[800],
+                        child: !detailedView
+                            ? SingleChildScrollView(
+                                reverse: true,
+                                child: CommentsBlock(
+                                  comments: comments,
+                                  userRecord: state.userRecord,
+                                  photoMemo: m,
+                                ),
+                              )
+                            : DetailedView(
+                                photoMemo: m,
+                                commentCount: commentCount,
+                                ownerUsername: photoMemoOwner.username,
+                              ),
+                      ),
+                      !detailedView
+                          ? Container(
+                              height: focusHeight * 0.18,
+                              width: focusWidth,
+                              color: Colors.grey[800],
+                              child: Column(
+                                children: [
+                                  Divider(),
+                                  Form(
+                                    key: state.formKey,
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                margin:
+                                                    EdgeInsets.only(left: 10.0),
+                                                width: focusWidth * 0.75,
+                                                child: TextFormField(
+                                                  decoration: InputDecoration(
+                                                    hintText:
+                                                        'Leave a comment!',
+                                                  ),
+                                                  autocorrect: true,
+                                                  obscureText: false,
+                                                  validator: validateComment,
+                                                  onSaved: saveComment,
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 12.0, left: 10.0),
+                                                child: ClipOval(
+                                                  child: Container(
+                                                    color:
+                                                        Theme.of(state.context)
+                                                            .primaryColor,
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        Icons
+                                                            .arrow_forward_rounded,
+                                                      ),
+                                                      iconSize: 30.0,
+                                                      onPressed: () {
+                                                        uploadComment(m);
+                                                        setState(() => comments
+                                                            .add(tempComment));
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : SizedBox(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void uploadComment(PhotoMemo memo) async {
+    if (!state.formKey.currentState.validate()) return;
+    // now validated
+    state.formKey.currentState.save();
+
+    try {
+      tempComment = Comment(
+        commentOwnerEmail: state.userRecord.email,
+        profilePicURL: state.userRecord.profilePictureURL,
+        username: state.userRecord.username,
+        message: message,
+        datePosted: DateTime.now(),
+      );
+      tempComment.docID =
+          await FirebaseController.addComment(tempComment, memo);
+      state.formKey.currentState.reset();
+    } catch (e) {
+      MyDialog.info(
+        context: state.context,
+        title: 'add comment error',
+        content: '$e',
+      );
+    }
+  }
+
+  String validateComment(String value) {
+    if (value.length == 0 || value.length > 200)
+      return 'Comments must be between 1 and 200 characters';
+    return null;
+  }
+
+  void saveComment(String value) {
+    message = value;
+  }
 }
