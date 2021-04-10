@@ -54,6 +54,13 @@ class _RoomScreenState extends State<RoomScreen> {
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
     memberUsernames ??= args[Constant.USER_USERNAME_MAP];
 
+    for (var m in roomMemos) {
+      if (!m.userNotifications.containsKey(userRecord.email)) {
+        m.userNotifications[userRecord.email] = 0;
+        FirebaseController.updateUserNotifications(m);
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(room.roomName),
@@ -83,15 +90,14 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () => Navigator.pushNamed(
-            context, AddPhotoMemoScreen.routeName,
-            arguments: {
-              Constant.ARG_USER: user,
-              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-              Constant.ARG_ROOM: room,
-              Constant.ARG_PHOTOMEMOLIST: photoMemos,
-              Constant.ARG_ROOM_MEMOLIST: roomMemos,
-            }),
+        onPressed: () =>
+            Navigator.pushNamed(context, AddPhotoMemoScreen.routeName, arguments: {
+          Constant.ARG_USER: user,
+          Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+          Constant.ARG_ROOM: room,
+          Constant.ARG_PHOTOMEMOLIST: photoMemos,
+          Constant.ARG_ROOM_MEMOLIST: roomMemos,
+        }),
       ),
       body: con.generateWall(),
     );
@@ -200,18 +206,30 @@ class _Controller {
     for (var m in state.roomMemos.reversed) {
       // 3
       widgies.add(
-        Container(
-          width: width,
-          height: width,
-          child: FittedBox(
-            fit: BoxFit.cover,
-            clipBehavior: Clip.hardEdge,
-            child: MaterialButton(
-              child: MyImage.network(url: m.photoURL, context: state.context),
-              onPressed: () => focusMemoView(m),
+        Stack(
+          children: [
+            Container(
+              width: width,
+              height: width,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: MaterialButton(
+                    child: MyImage.network(url: m.photoURL, context: state.context),
+                    onPressed: () {
+                      focusMemoView(m);
+                      state.render(() {});
+                    }),
+              ),
+              color: Colors.transparent,
             ),
-          ),
-          color: Colors.transparent,
+            Positioned(
+              right: 0.0,
+              child: Container(
+                child: getNotificationIcon(m.userNotifications[state.userRecord.email]),
+              ),
+            )
+          ],
         ),
       );
       size--;
@@ -234,13 +252,42 @@ class _Controller {
     return w;
   }
 
+  Widget getNotificationIcon(int value) {
+    switch (value) {
+      case 0:
+        return SizedBox();
+      case 1:
+        return Icon(Icons.filter_1_rounded, size: 30.0, color: Colors.red);
+      case 2:
+        return Icon(Icons.filter_2_rounded, size: 30.0, color: Colors.red);
+      case 3:
+        return Icon(Icons.filter_3_rounded, size: 30.0, color: Colors.red);
+      case 4:
+        return Icon(Icons.filter_4_rounded, size: 30.0, color: Colors.red);
+      case 5:
+        return Icon(Icons.filter_5_rounded, size: 30.0, color: Colors.red);
+      case 6:
+        return Icon(Icons.filter_6_rounded, size: 30.0, color: Colors.red);
+      case 7:
+        return Icon(Icons.filter_7_rounded, size: 30.0, color: Colors.red);
+      case 8:
+        return Icon(Icons.filter_8_rounded, size: 30.0, color: Colors.red);
+      case 9:
+        return Icon(Icons.filter_9_rounded, size: 30.0, color: Colors.red);
+      default:
+        return Icon(Icons.filter_9_plus_rounded, size: 30.0, color: Colors.red[900]);
+    }
+  }
+
   void focusMemoView(PhotoMemo m) async {
+    print('===================================================peeepepepepepepepeppeppe');
     int commentCount;
     UserRecord photoMemoOwner;
     try {
+      m.userNotifications[state.userRecord.email] = 0;
+      await FirebaseController.updateUserNotifications(m);
       comments = await FirebaseController.getComments(memo: m);
-      photoMemoOwner =
-          await FirebaseController.getUserRecord(email: m.createdBy);
+      photoMemoOwner = await FirebaseController.getUserRecord(email: m.createdBy);
       // getting comment owner username & profile pic from firebase
       for (var c in comments) {
         UserRecord userR =
@@ -303,14 +350,13 @@ class _Controller {
                                 !detailedView
                                     ? Icons.analytics_outlined
                                     : Icons.comment_outlined,
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.8),
+                                color: Theme.of(context).primaryColor.withOpacity(0.8),
                                 size: !detailedView ? 50.0 : 40.0,
                               ),
                               onPressed: () async {
-                                commentCount = await FirebaseController
-                                    .getPhotomemoCommentCount(photoMemo: m);
+                                commentCount =
+                                    await FirebaseController.getPhotomemoCommentCount(
+                                        photoMemo: m);
                                 setState(() => detailedView = !detailedView);
                               },
                             ),
@@ -352,13 +398,11 @@ class _Controller {
                                           Row(
                                             children: [
                                               Container(
-                                                margin:
-                                                    EdgeInsets.only(left: 10.0),
+                                                margin: EdgeInsets.only(left: 10.0),
                                                 width: focusWidth * 0.75,
                                                 child: TextFormField(
                                                   decoration: InputDecoration(
-                                                    hintText:
-                                                        'Leave a comment!',
+                                                    hintText: 'Leave a comment!',
                                                   ),
                                                   autocorrect: true,
                                                   obscureText: false,
@@ -371,19 +415,17 @@ class _Controller {
                                                     top: 12.0, left: 10.0),
                                                 child: ClipOval(
                                                   child: Container(
-                                                    color:
-                                                        Theme.of(state.context)
-                                                            .primaryColor,
+                                                    color: Theme.of(state.context)
+                                                        .primaryColor,
                                                     child: IconButton(
                                                       icon: Icon(
-                                                        Icons
-                                                            .arrow_forward_rounded,
+                                                        Icons.arrow_forward_rounded,
                                                       ),
                                                       iconSize: 30.0,
                                                       onPressed: () {
                                                         uploadComment(m);
-                                                        setState(() => comments
-                                                            .add(tempComment));
+                                                        setState(() =>
+                                                            comments.add(tempComment));
                                                       },
                                                     ),
                                                   ),
@@ -416,6 +458,15 @@ class _Controller {
     state.formKey.currentState.save();
 
     try {
+      for (var member in memo.roomMembers) {
+        if (member == state.userRecord.email) continue;
+        if (!memo.userNotifications.containsKey(member)) {
+          memo.userNotifications[member] = 1;
+        } else {
+          memo.userNotifications[member]++;
+        }
+      }
+      await FirebaseController.updateUserNotifications(memo);
       tempComment = Comment(
         commentOwnerEmail: state.userRecord.email,
         profilePicURL: state.userRecord.profilePictureURL,
@@ -423,8 +474,7 @@ class _Controller {
         message: message,
         datePosted: DateTime.now(),
       );
-      tempComment.docID =
-          await FirebaseController.addComment(tempComment, memo);
+      tempComment.docID = await FirebaseController.addComment(tempComment, memo);
       state.formKey.currentState.reset();
     } catch (e) {
       MyDialog.info(

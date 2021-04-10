@@ -4,7 +4,7 @@ class Room {
   String docID;
   String roomName;
   List<dynamic> members;
-  List<dynamic> memos;
+  List<dynamic> memos; // docIDS
   String owner;
 
   static const ROOM_NAME = 'roomName';
