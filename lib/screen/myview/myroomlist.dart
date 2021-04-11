@@ -108,6 +108,8 @@ class _Controller {
       Map urls = await FirebaseController.getRoomMemberProfilePicURLs(
         roomMemberList: e.members,
       );
+
+      Map notifs = await FirebaseController.getRoomNotifs(memos);
       print('======================= URLS = $urls');
       MyDialog.circularProgressStop(state.context);
       Navigator.pushNamed(
@@ -121,13 +123,14 @@ class _Controller {
           Constant.ARG_USERRECORD: state.userRecord,
           Constant.ARG_USER_PROFILE_URL_MAP: urls,
           Constant.USER_USERNAME_MAP: memberUsernames,
+          Constant.ARG_NOTIFS: notifs,
         },
       );
     } catch (e) {
       MyDialog.circularProgressStop(state.context);
       MyDialog.info(
         context: state.context,
-        title: 'getRoomPhotoMemoList ERROR',
+        title: 'getRoomPhotoMemoList or getNotifs or ERROR',
         content: '$e',
       );
     }

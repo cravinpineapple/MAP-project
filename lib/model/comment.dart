@@ -35,8 +35,7 @@ class Comment {
       message: doc[COMMENT_MESSAGE],
       datePosted: doc[DATE_POSTED] == null
           ? null
-          : DateTime.fromMillisecondsSinceEpoch(
-              doc[DATE_POSTED].millisecondsSinceEpoch),
+          : DateTime.fromMillisecondsSinceEpoch(doc[DATE_POSTED].millisecondsSinceEpoch),
       docID: docID,
     );
   }

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:lesson3part1/model/comment.dart';
+import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
@@ -370,12 +371,39 @@ class FirebaseController {
     );
   }
 
-  static Future<List<dynamic>> getRoomMembers(Room room) async {}
-
-  static Future<void> updateUserNotifications(PhotoMemo photoMemo) async {
+  static Future<void> updateUserNotifications(PhotoMemo photoMemo, Notif notif) async {
     FirebaseFirestore.instance
         .collection(Constant.PHOTOMEMO_COLLECTION)
         .doc(photoMemo.docID)
-        .update({PhotoMemo.USER_NOTOIFICATIONS: photoMemo.userNotifications});
+        .collection(Constant.NOTIF_COLLECTION)
+        .doc(notif.docID)
+        .update({Notif.NOTIFICATION: notif.notification});
+  }
+
+  static Future<String> addNotif(Notif notif, String docIDOfPhotoMemo) async {
+    var ref = await FirebaseFirestore.instance
+        .collection(Constant.PHOTOMEMO_COLLECTION)
+        .doc(docIDOfPhotoMemo)
+        .collection(Constant.NOTIF_COLLECTION)
+        .add(notif.serialize());
+
+    return ref.id;
+  }
+
+  static Future<Map> getRoomNotifs(List<PhotoMemo> memos) async {
+    Map result = {};
+
+    for (var m in memos) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(Constant.PHOTOMEMO_COLLECTION)
+          .doc(m.docID)
+          .collection(Constant.NOTIF_COLLECTION)
+          .get();
+
+      querySnapshot.docs
+          .forEach((e) => result[m.docID] = Notif.deserialize(e.data(), e.id));
+    }
+
+    return result;
   }
 }

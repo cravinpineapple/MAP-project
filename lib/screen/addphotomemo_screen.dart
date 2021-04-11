@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lesson3part1/model/constant.dart';
+import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 
@@ -26,6 +27,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   List<PhotoMemo> photoMemoList;
   List<dynamic> roomMemoList;
   List<PhotoMemo> roomActualPhotoMemos;
+  Map<dynamic, dynamic> notif;
   File photo;
   String progressMessage;
   Room room;
@@ -46,6 +48,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
     roomMemoList ??= args[Constant.ARG_ROOM_MEMO_DOCIDS];
     roomActualPhotoMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     room ??= args[Constant.ARG_ROOM];
+    notif ??= args[Constant.ARG_NOTIFS];
 
     String title = room != null ? 'Upload Photo' : 'Upload Photo Privately';
 
@@ -112,8 +115,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage,
-                      style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -177,8 +179,7 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage =
-                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
@@ -199,6 +200,10 @@ class _Controller {
       if (state.room != null) tempMemo.roomMembers.addAll(state.room.members);
       String docID = await FirebaseController.addPhotoMemo(tempMemo);
       tempMemo.docID = docID;
+
+      state.notif[docID] = Notif(notification: {});
+      state.notif[docID].docID =
+          await FirebaseController.addNotif(state.notif[docID], docID);
 
       if (state.room != null) {
         state.roomActualPhotoMemos.add(tempMemo);
@@ -238,8 +243,7 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null)
-        return; // selection from camera/gallery was canceled
+      if (_imageFile == null) return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -260,8 +264,7 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith =
-          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }

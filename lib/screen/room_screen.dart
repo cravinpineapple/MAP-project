@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/comment.dart';
+import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
@@ -31,6 +32,7 @@ class _RoomScreenState extends State<RoomScreen> {
   UserRecord userRecord;
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
+  Map<dynamic, dynamic> notifs;
   Map<String, String> memberProfilePicURLS;
   Map<dynamic, dynamic> memberUsernames;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -53,11 +55,14 @@ class _RoomScreenState extends State<RoomScreen> {
     userRecord ??= args[Constant.ARG_USERRECORD];
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
     memberUsernames ??= args[Constant.USER_USERNAME_MAP];
+    notifs ??= args[Constant.ARG_NOTIFS];
+
+    print(notifs);
 
     for (var m in roomMemos) {
-      if (!m.userNotifications.containsKey(userRecord.email)) {
-        m.userNotifications[userRecord.email] = 0;
-        FirebaseController.updateUserNotifications(m);
+      if (!notifs[m.docID].notification.containsKey(userRecord.email)) {
+        notifs[m.docID].notification[userRecord.email] = 0;
+        FirebaseController.updateUserNotifications(m, notifs[m.docID]);
       }
     }
 
@@ -97,6 +102,7 @@ class _RoomScreenState extends State<RoomScreen> {
           Constant.ARG_ROOM: room,
           Constant.ARG_PHOTOMEMOLIST: photoMemos,
           Constant.ARG_ROOM_MEMOLIST: roomMemos,
+          Constant.ARG_NOTIFS: notifs,
         }),
       ),
       body: con.generateWall(),
@@ -224,9 +230,15 @@ class _Controller {
               color: Colors.transparent,
             ),
             Positioned(
-              right: 0.0,
+              right: 5.0,
+              top: 2.0,
               child: Container(
-                child: getNotificationIcon(m.userNotifications[state.userRecord.email]),
+                decoration: BoxDecoration(boxShadow: [
+                  BoxShadow(color: Colors.grey[600].withOpacity(.8), blurRadius: 5.0)
+                ]),
+                child: getNotificationIcon(
+                  state.notifs[m.docID].notification[state.userRecord.email],
+                ),
               ),
             )
           ],
@@ -253,39 +265,40 @@ class _Controller {
   }
 
   Widget getNotificationIcon(int value) {
+    Color notificationIconColor = Theme.of(state.context).primaryColor;
     switch (value) {
       case 0:
         return SizedBox();
       case 1:
-        return Icon(Icons.filter_1_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_1_rounded, size: 36.0, color: notificationIconColor);
       case 2:
-        return Icon(Icons.filter_2_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_2_rounded, size: 36.0, color: notificationIconColor);
       case 3:
-        return Icon(Icons.filter_3_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_3_rounded, size: 36.0, color: notificationIconColor);
       case 4:
-        return Icon(Icons.filter_4_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_4_rounded, size: 36.0, color: notificationIconColor);
       case 5:
-        return Icon(Icons.filter_5_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_5_rounded, size: 36.0, color: notificationIconColor);
       case 6:
-        return Icon(Icons.filter_6_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_6_rounded, size: 36.0, color: notificationIconColor);
       case 7:
-        return Icon(Icons.filter_7_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_7_rounded, size: 36.0, color: notificationIconColor);
       case 8:
-        return Icon(Icons.filter_8_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_8_rounded, size: 36.0, color: notificationIconColor);
       case 9:
-        return Icon(Icons.filter_9_rounded, size: 30.0, color: Colors.red);
+        return Icon(Icons.filter_9_rounded, size: 36.0, color: notificationIconColor);
       default:
-        return Icon(Icons.filter_9_plus_rounded, size: 30.0, color: Colors.red[900]);
+        return Icon(Icons.filter_9_plus_rounded,
+            size: 36.0, color: notificationIconColor);
     }
   }
 
   void focusMemoView(PhotoMemo m) async {
-    print('===================================================peeepepepepepepepeppeppe');
     int commentCount;
     UserRecord photoMemoOwner;
     try {
-      m.userNotifications[state.userRecord.email] = 0;
-      await FirebaseController.updateUserNotifications(m);
+      state.notifs[m.docID].notification[state.userRecord.email] = 0;
+      await FirebaseController.updateUserNotifications(m, state.notifs[m.docID]);
       comments = await FirebaseController.getComments(memo: m);
       photoMemoOwner = await FirebaseController.getUserRecord(email: m.createdBy);
       // getting comment owner username & profile pic from firebase
@@ -374,6 +387,7 @@ class _Controller {
                                   comments: comments,
                                   userRecord: state.userRecord,
                                   photoMemo: m,
+                                  notifs: state.notifs,
                                 ),
                               )
                             : DetailedView(
@@ -460,13 +474,16 @@ class _Controller {
     try {
       for (var member in memo.roomMembers) {
         if (member == state.userRecord.email) continue;
-        if (!memo.userNotifications.containsKey(member)) {
-          memo.userNotifications[member] = 1;
+        if (!state.notifs[memo.docID].notification.containsKey(member)) {
+          state.notifs[memo.docID].notification[member] = 1;
         } else {
-          memo.userNotifications[member]++;
+          state.notifs[memo.docID].notification[member]++;
         }
       }
-      await FirebaseController.updateUserNotifications(memo);
+      // updating comment error
+      // why did this happen
+      // we took away await. dont await
+      FirebaseController.updateUserNotifications(memo, state.notifs[memo.docID]);
       tempComment = Comment(
         commentOwnerEmail: state.userRecord.email,
         profilePicURL: state.userRecord.profilePictureURL,
@@ -479,7 +496,7 @@ class _Controller {
     } catch (e) {
       MyDialog.info(
         context: state.context,
-        title: 'add comment error',
+        title: 'upload comment error',
         content: '$e',
       );
     }

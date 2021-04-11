@@ -13,11 +13,13 @@ class CommentsBlock extends StatefulWidget {
   final List<Comment> comments;
   final UserRecord userRecord;
   final PhotoMemo photoMemo;
+  final Map notifs;
 
   CommentsBlock({
     @required this.comments,
     @required this.userRecord,
     @required this.photoMemo,
+    @required this.notifs,
   });
 
   @override
@@ -32,6 +34,7 @@ class _CommentsBlockState extends State<CommentsBlock> {
   UserRecord userRecord;
   PhotoMemo photoMemo;
   dynamic parentSetState;
+  Map notifs;
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _CommentsBlockState extends State<CommentsBlock> {
     comments = widget.comments;
     userRecord = widget.userRecord;
     photoMemo = widget.photoMemo;
+    notifs = widget.notifs;
   }
 
   void render(fn) => setState(fn);
@@ -77,8 +81,7 @@ class _Controller {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                    margin: EdgeInsets.only(
-                                        top: 10.0, bottom: 10.0),
+                                    margin: EdgeInsets.only(top: 10.0, bottom: 10.0),
                                     height: 10.0,
                                     child: Text(
                                       formatter.format(e.datePosted),
@@ -89,17 +92,15 @@ class _Controller {
                                     child: Text(
                                       e.username,
                                       style: TextStyle(
-                                          color: Theme.of(state.context)
-                                              .primaryColor),
+                                          color: Theme.of(state.context).primaryColor),
                                     )),
                                 Wrap(
                                   children: [
                                     Container(
                                         child: Text(
                                       e.message,
-                                      style: TextStyle(fontFeatures: [
-                                        FontFeature.tabularFigures()
-                                      ]),
+                                      style: TextStyle(
+                                          fontFeatures: [FontFeature.tabularFigures()]),
                                     )),
                                   ],
                                 ),
@@ -108,9 +109,7 @@ class _Controller {
                           ),
                         ),
                         Expanded(
-                          flex: state.userRecord.email == e.commentOwnerEmail
-                              ? 1
-                              : 0,
+                          flex: state.userRecord.email == e.commentOwnerEmail ? 1 : 0,
                           child: state.userRecord.email == e.commentOwnerEmail
                               ? IconButton(
                                   icon: Icon(Icons.delete_forever),
@@ -167,6 +166,19 @@ class _Controller {
 
   void confirmDelete(Comment comment) async {
     try {
+      for (var member in state.photoMemo.roomMembers) {
+        if (member == state.userRecord.email) continue;
+        if (!state.notifs[state.photoMemo.docID].notification.containsKey(member)) {
+          state.notifs[state.photoMemo.docID].notification[member] = 0;
+        } else if (state.notifs[state.photoMemo.docID].notification[member] > 0) {
+          state.notifs[state.photoMemo.docID].notification[member]--;
+        }
+      }
+      // updating comment error
+      // why did this happen
+      // we took away await. dont await
+      FirebaseController.updateUserNotifications(
+          state.photoMemo, state.notifs[state.photoMemo.docID]);
       await FirebaseController.deleteComment(
           comment: comment, photoMemo: state.photoMemo);
 
