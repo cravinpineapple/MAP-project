@@ -40,6 +40,8 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   String progressMessage;
   Room room;
   List<Activity> activityFeed;
+  bool isImageMLSwitchedOn = false;
+  bool isTextMLSwitchedOn = false;
 
   @override
   void initState() {
@@ -127,8 +129,75 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage,
-                      style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
+              SizedBox(
+                height: 20.0,
+              ),
+              Text(
+                'Select Additional Machine Learning Options',
+                style: Theme.of(context).textTheme.headline6,
+              ),
+              Container(
+                height: 90.0,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(),
+                      flex: 1,
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 20.0,
+                          ),
+                          Text('Image Labeler ML'),
+                          Container(
+                            width: 80.0,
+                            child: Switch(
+                              value: isImageMLSwitchedOn,
+                              onChanged: (v) => render(() => isImageMLSwitchedOn = v),
+                              activeTrackColor: isImageMLSwitchedOn
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
+                              inactiveThumbColor:
+                                  isImageMLSwitchedOn ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 20.0,
+                          ),
+                          Text('Text Recognition ML'),
+                          Container(
+                            width: 80.0,
+                            child: Switch(
+                              value: isTextMLSwitchedOn,
+                              onChanged: (v) => render(() => isTextMLSwitchedOn = v),
+                              activeTrackColor: isTextMLSwitchedOn
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
+                              inactiveThumbColor:
+                                  isTextMLSwitchedOn ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: SizedBox(),
+                      flex: 1,
+                    ),
+                  ],
+                ),
+              ),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -193,18 +262,26 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage =
-                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
       );
 
-      // image labels by ML
-      state.render(() => state.progressMessage = 'ML Image Labeler Started');
-      List<dynamic> imageLabels =
-          await FirebaseController.getImageLabels(photoFile: state.photo);
-      state.render(() => state.progressMessage = null);
+      List<dynamic> imageLabels = [];
+      List<dynamic> textLabels = [];
+      if (state.isImageMLSwitchedOn) {
+        // image labels by ML
+        state.render(() => state.progressMessage = 'ML Image Labeler Started');
+        imageLabels = await FirebaseController.getImageLabels(photoFile: state.photo);
+        state.render(() => state.progressMessage = null);
+      }
+
+      if (state.isTextMLSwitchedOn) {
+        state.render(() => state.progressMessage = 'ML Text Recognition Started');
+        textLabels = await FirebaseController.getRecognizedText(photoFile: state.photo);
+        state.render(() => state.progressMessage = null);
+      }
 
       tempMemo.photoFilename = photoInfo[Constant.ARG_FILENAME];
       tempMemo.photoURL = photoInfo[Constant.ARG_DOWNLOADURL];
@@ -279,8 +356,7 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null)
-        return; // selection from camera/gallery was canceled
+      if (_imageFile == null) return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -301,8 +377,7 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith =
-          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }
