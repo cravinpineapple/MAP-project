@@ -12,6 +12,7 @@ class Constant {
   static const ARG_USER_PROFILE_URL_MAP = 'userProfileURLMap';
   static const USER_USERNAME_MAP = 'roomMemberUsernames';
   static const ARG_NOTIFS = 'argNotif';
+  static const ARG_ACTIVITY_FEED = 'activityFeed';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';
@@ -23,6 +24,7 @@ class Constant {
   static const USERRECORD_COLLECTION = 'userRecords';
   static const COMMENTS_COLLECTION = 'comments';
   static const NOTIF_COLLECTION = 'notifs';
+  static const ACTIVITY_COLLECTION = 'activities';
 
   static const ARG_DOWNLOADURL = 'downloadurl';
   static const ARG_FILENAME = 'filename';
