@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 
@@ -29,6 +30,8 @@ class _ProfileState extends State<SettingsScreen> {
   bool editMode = false;
   double profilePicLength = 225.0;
   String progressMessage;
+  List<Activity> activityFeed;
+  Activity temp;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
@@ -46,6 +49,7 @@ class _ProfileState extends State<SettingsScreen> {
     Map args = ModalRoute.of(context).settings.arguments;
     userRecord ??= args[Constant.ARG_USERRECORD];
     user ??= args[Constant.ARG_USER];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
 
     return Scaffold(
       appBar: AppBar(
@@ -253,6 +257,18 @@ class _Controller {
 
       await FirebaseController.updateUserProfileInformation(
           userRecord: tempUserRecord);
+
+      state.temp = Activity(
+          timestamp: DateTime.now(),
+          enumAction: ActivityAction.myProfileChange,
+          photoUrl: tempUserRecord.profilePictureURL);
+      state.temp.docID =
+          await FirebaseController.addActivity(state.temp, state.userRecord);
+
+      state.activityFeed.insert(0, state.temp);
+      for (int i = 0; i < state.activityFeed.length; i++) {
+        print('${state.activityFeed[i].timestamp}');
+      }
 
       state.render(() => state.userRecord.assign(tempUserRecord));
       state.editMode = false;

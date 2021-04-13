@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/constant.dart';
+import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 
 import '../controller/firebasecontroller.dart';
 import 'myview/mydialog.dart';
@@ -23,12 +26,20 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   _Controller con;
   User user;
+
+  // uploading photo
+  UserRecord userRecord;
+  // all other members that need to be notified
+  List<UserRecord> otherMembers;
+
   List<PhotoMemo> photoMemoList;
   List<dynamic> roomMemoList;
   List<PhotoMemo> roomActualPhotoMemos;
+  Map<dynamic, dynamic> notif;
   File photo;
   String progressMessage;
   Room room;
+  List<Activity> activityFeed;
 
   @override
   void initState() {
@@ -46,6 +57,10 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
     roomMemoList ??= args[Constant.ARG_ROOM_MEMO_DOCIDS];
     roomActualPhotoMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     room ??= args[Constant.ARG_ROOM];
+    notif ??= args[Constant.ARG_NOTIFS];
+    userRecord ??= args[Constant.ARG_USERRECORD];
+    otherMembers ??= args[Constant.ARG_USERRECORD_LIST];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
 
     String title = room != null ? 'Upload Photo' : 'Upload Photo Privately';
 
@@ -157,6 +172,7 @@ class _Controller {
   _AddPhotoMemoState state;
   _Controller(this.state);
   PhotoMemo tempMemo = PhotoMemo();
+  Activity tempActivity;
 
   void save() async {
     if (!state.formKey.currentState.validate()) return;
@@ -200,6 +216,10 @@ class _Controller {
       String docID = await FirebaseController.addPhotoMemo(tempMemo);
       tempMemo.docID = docID;
 
+      state.notif[docID] = Notif(notification: {});
+      state.notif[docID].docID =
+          await FirebaseController.addNotif(state.notif[docID], docID);
+
       if (state.room != null) {
         state.roomActualPhotoMemos.add(tempMemo);
         state.room.memos.add(docID);
@@ -210,6 +230,27 @@ class _Controller {
       }
 
       state.photoMemoList.insert(0, tempMemo);
+
+      // Give Activity Feed notification to all other room members
+      tempActivity = Activity(
+        enumAction: ActivityAction.photoUpload,
+        timestamp: tempMemo.timestamp,
+        actionOwnerUsername: state.userRecord.username,
+        photoUrl: tempMemo.photoURL,
+        roomName: state.room.roomName,
+      );
+      state.activityFeed.insert(0, tempActivity);
+
+      for (var u in state.otherMembers) {
+        if (u.email == state.userRecord.email) {
+          tempActivity.actionOwnerUsername = 'I';
+          FirebaseController.addActivity(tempActivity, u);
+          tempActivity.actionOwnerUsername = state.userRecord.username;
+          continue;
+        }
+
+        FirebaseController.addActivity(tempActivity, u);
+      }
 
       MyDialog.circularProgressStop(state.context);
       Navigator.pop(state.context); // return to user home screen

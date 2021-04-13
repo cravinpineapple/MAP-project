@@ -11,6 +11,8 @@ class PhotoMemo {
       sharedWith; // list of emails (dynamic gives better compatibility with Firestore)
   List<dynamic> roomMembers;
   List<dynamic> imageLabels;
+  // expecting {email: int}
+  Map<dynamic, dynamic> userNotifications;
 
   // key for  Firestore documents
   static const TITLE = 'title';
@@ -23,6 +25,7 @@ class PhotoMemo {
   static const IMAGE_LABELS = 'imageLabels';
   static const ROOM_NAME = 'roomName';
   static const ROOM_MEMBERS = 'roomMembers';
+  static const USER_NOTOIFICATIONS = 'userNotifications';
 
   PhotoMemo({
     this.docID,
@@ -36,10 +39,12 @@ class PhotoMemo {
     this.sharedWith,
     this.roomMembers,
     this.imageLabels,
+    this.userNotifications,
   }) {
     this.sharedWith ??= [];
     this.roomMembers ??= [];
     this.imageLabels ??= [];
+    this.userNotifications ??= {};
   }
 
   PhotoMemo.clone(PhotoMemo p) {
@@ -61,6 +66,8 @@ class PhotoMemo {
     this.roomMembers.addAll(p.roomMembers);
     this.imageLabels = [];
     this.imageLabels.addAll(p.imageLabels);
+    this.userNotifications = {};
+    this.userNotifications.addAll(p.userNotifications);
   }
 
   // a = b ==> a.assign(b) (achieves memberwise assignment)
@@ -83,6 +90,8 @@ class PhotoMemo {
     this.roomMembers.addAll(p.roomMembers);
     this.imageLabels.clear();
     this.imageLabels.addAll(p.imageLabels);
+    this.userNotifications.clear();
+    this.userNotifications.addAll(p.userNotifications);
   }
 
   // converts dart object (instance of class) to compatible Firestore document
@@ -98,6 +107,7 @@ class PhotoMemo {
       ROOM_MEMBERS: this.roomMembers,
       TIMESTAMP: this.timestamp,
       IMAGE_LABELS: this.imageLabels,
+      USER_NOTOIFICATIONS: this.userNotifications,
     };
   }
 
@@ -114,10 +124,10 @@ class PhotoMemo {
       sharedWith: doc[SHARED_WITH],
       roomMembers: doc[ROOM_MEMBERS],
       imageLabels: doc[IMAGE_LABELS],
+      userNotifications: doc[USER_NOTOIFICATIONS],
       timestamp: doc[TIMESTAMP] == null
           ? null
-          : DateTime.fromMillisecondsSinceEpoch(
-              doc[TIMESTAMP].millisecondsSinceEpoch),
+          : DateTime.fromMillisecondsSinceEpoch(doc[TIMESTAMP].millisecondsSinceEpoch),
     );
   }
 
@@ -140,8 +150,7 @@ class PhotoMemo {
     if (value == null || value.trim().length == 0) return null;
 
     // sharing with people
-    List<String> emailList =
-        value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     for (String email in emailList) {
       if (email.contains('@') && email.contains('.'))
         continue;

@@ -4,7 +4,7 @@ class Room {
   String docID;
   String roomName;
   List<dynamic> members;
-  List<dynamic> memos;
+  List<dynamic> memos; // docIDS
   String owner;
 
   static const ROOM_NAME = 'roomName';
@@ -46,7 +46,8 @@ class Room {
     if (value == null || value.trim().length == 0) return null;
 
     // sharing with people
-    List<String> emailList = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+    List<String> emailList =
+        value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     for (String email in emailList) {
       if (email.contains('@') && email.contains('.'))
         continue;

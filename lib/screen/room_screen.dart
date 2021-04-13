@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/comment.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
@@ -31,9 +32,12 @@ class _RoomScreenState extends State<RoomScreen> {
   UserRecord userRecord;
   List<PhotoMemo> photoMemos;
   List<PhotoMemo> roomMemos;
+  Map<dynamic, dynamic> notifs;
   Map<String, String> memberProfilePicURLS;
   Map<dynamic, dynamic> memberUsernames;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  List<UserRecord> memberUserRecords;
+  List<Activity> activityFeed;
 
   @override
   void initState() {
@@ -53,6 +57,18 @@ class _RoomScreenState extends State<RoomScreen> {
     userRecord ??= args[Constant.ARG_USERRECORD];
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
     memberUsernames ??= args[Constant.USER_USERNAME_MAP];
+    notifs ??= args[Constant.ARG_NOTIFS];
+    memberUserRecords ??= args[Constant.ARG_USERRECORD_LIST];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
+
+    print(notifs);
+
+    for (var m in roomMemos) {
+      if (!notifs[m.docID].notification.containsKey(userRecord.email)) {
+        notifs[m.docID].notification[userRecord.email] = 0;
+        FirebaseController.updateUserNotifications(m, notifs[m.docID]);
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -84,14 +100,20 @@ class _RoomScreenState extends State<RoomScreen> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () => Navigator.pushNamed(
-            context, AddPhotoMemoScreen.routeName,
-            arguments: {
-              Constant.ARG_USER: user,
-              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-              Constant.ARG_ROOM: room,
-              Constant.ARG_PHOTOMEMOLIST: photoMemos,
-              Constant.ARG_ROOM_MEMOLIST: roomMemos,
-            }),
+          context,
+          AddPhotoMemoScreen.routeName,
+          arguments: {
+            Constant.ARG_USER: user,
+            Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+            Constant.ARG_ROOM: room,
+            Constant.ARG_PHOTOMEMOLIST: photoMemos,
+            Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            Constant.ARG_NOTIFS: notifs,
+            Constant.ARG_USERRECORD: userRecord,
+            Constant.ARG_USERRECORD_LIST: memberUserRecords,
+            Constant.ARG_ACTIVITY_FEED: activityFeed,
+          },
+        ),
       ),
       body: con.generateWall(),
     );
@@ -106,6 +128,7 @@ class _Controller {
   List<Comment> comments = [];
   Comment tempComment;
   bool detailedView = false;
+  Activity tempActivity;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -200,18 +223,38 @@ class _Controller {
     for (var m in state.roomMemos.reversed) {
       // 3
       widgies.add(
-        Container(
-          width: width,
-          height: width,
-          child: FittedBox(
-            fit: BoxFit.cover,
-            clipBehavior: Clip.hardEdge,
-            child: MaterialButton(
-              child: MyImage.network(url: m.photoURL, context: state.context),
-              onPressed: () => focusMemoView(m),
+        Stack(
+          children: [
+            Container(
+              width: width,
+              height: width,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: MaterialButton(
+                    child: MyImage.network(
+                        url: m.photoURL, context: state.context),
+                    onPressed: () {
+                      focusMemoView(m);
+                      state.render(() {});
+                    }),
+              ),
+              color: Colors.transparent,
             ),
-          ),
-          color: Colors.transparent,
+            Positioned(
+              right: 5.0,
+              top: 2.0,
+              child: Container(
+                decoration: BoxDecoration(boxShadow: [
+                  BoxShadow(
+                      color: Colors.grey[600].withOpacity(.8), blurRadius: 5.0)
+                ]),
+                child: getNotificationIcon(
+                  state.notifs[m.docID].notification[state.userRecord.email],
+                ),
+              ),
+            )
+          ],
         ),
       );
       size--;
@@ -234,10 +277,51 @@ class _Controller {
     return w;
   }
 
+  Widget getNotificationIcon(int value) {
+    Color notificationIconColor = Theme.of(state.context).primaryColor;
+    switch (value) {
+      case 0:
+        return SizedBox();
+      case 1:
+        return Icon(Icons.filter_1_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 2:
+        return Icon(Icons.filter_2_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 3:
+        return Icon(Icons.filter_3_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 4:
+        return Icon(Icons.filter_4_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 5:
+        return Icon(Icons.filter_5_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 6:
+        return Icon(Icons.filter_6_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 7:
+        return Icon(Icons.filter_7_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 8:
+        return Icon(Icons.filter_8_rounded,
+            size: 36.0, color: notificationIconColor);
+      case 9:
+        return Icon(Icons.filter_9_rounded,
+            size: 36.0, color: notificationIconColor);
+      default:
+        return Icon(Icons.filter_9_plus_rounded,
+            size: 36.0, color: notificationIconColor);
+    }
+  }
+
   void focusMemoView(PhotoMemo m) async {
     int commentCount;
     UserRecord photoMemoOwner;
     try {
+      state.notifs[m.docID].notification[state.userRecord.email] = 0;
+      await FirebaseController.updateUserNotifications(
+          m, state.notifs[m.docID]);
       comments = await FirebaseController.getComments(memo: m);
       photoMemoOwner =
           await FirebaseController.getUserRecord(email: m.createdBy);
@@ -328,6 +412,7 @@ class _Controller {
                                   comments: comments,
                                   userRecord: state.userRecord,
                                   photoMemo: m,
+                                  notifs: state.notifs,
                                 ),
                               )
                             : DetailedView(
@@ -414,8 +499,22 @@ class _Controller {
     if (!state.formKey.currentState.validate()) return;
     // now validated
     state.formKey.currentState.save();
+    state.formKey.currentState.reset();
 
     try {
+      for (var member in memo.roomMembers) {
+        if (member == state.userRecord.email) continue;
+        if (!state.notifs[memo.docID].notification.containsKey(member)) {
+          state.notifs[memo.docID].notification[member] = 1;
+        } else {
+          state.notifs[memo.docID].notification[member]++;
+        }
+      }
+      // updating comment error
+      // why did this happen
+      // we took away await. dont await
+      FirebaseController.updateUserNotifications(
+          memo, state.notifs[memo.docID]);
       tempComment = Comment(
         commentOwnerEmail: state.userRecord.email,
         profilePicURL: state.userRecord.profilePictureURL,
@@ -425,11 +524,33 @@ class _Controller {
       );
       tempComment.docID =
           await FirebaseController.addComment(tempComment, memo);
-      state.formKey.currentState.reset();
+
+      // sending activity feed to all users
+      tempActivity = Activity(
+        actionOwnerUsername: state.userRecord.username,
+        enumAction: ActivityAction.comment,
+        timestamp: tempComment.datePosted,
+        photoTitle: memo.title,
+        photoUrl: memo.photoURL,
+        commentMessage: tempComment.message,
+        roomName: state.room.roomName,
+      );
+      state.activityFeed.insert(0, tempActivity);
+
+      for (var u in state.memberUserRecords) {
+        if (u.email == state.userRecord.email) {
+          tempActivity.actionOwnerUsername = 'I';
+          FirebaseController.addActivity(tempActivity, u);
+          tempActivity.actionOwnerUsername = state.userRecord.username;
+          continue;
+        }
+
+        FirebaseController.addActivity(tempActivity, u);
+      }
     } catch (e) {
       MyDialog.info(
         context: state.context,
-        title: 'add comment error',
+        title: 'upload comment error',
         content: '$e',
       );
     }

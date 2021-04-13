@@ -4,6 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
@@ -17,12 +18,14 @@ class MyRoomList extends StatefulWidget {
   final User user;
   final List<PhotoMemo> photoMemos;
   final UserRecord userRecord;
+  final List<Activity> activityFeed;
 
   MyRoomList({
     @required this.roomList,
     @required this.user,
     @required this.photoMemos,
     @required this.userRecord,
+    @required this.activityFeed,
   });
 
   @override
@@ -38,6 +41,8 @@ class _MyRoomListState extends State<MyRoomList> {
   _Controller con;
   User user;
   UserRecord userRecord;
+  List<Activity> activityFeed;
+  void callBack;
 
   @override
   void initState() {
@@ -46,6 +51,7 @@ class _MyRoomListState extends State<MyRoomList> {
     user = widget.user;
     photoMemos = widget.photoMemos;
     userRecord = widget.userRecord;
+    activityFeed = widget.activityFeed;
 
     con = _Controller(this);
     _scrollController = ScrollController();
@@ -103,14 +109,18 @@ class _Controller {
       memos = await FirebaseController.getRoomPhotoMemoList(
         photoMemoList: e.memos,
       );
-      Map memberUsernames =
-          await FirebaseController.getUserRecordList(roomMemberList: e.members);
+      Map memberUsernames = await FirebaseController.getRoomMemberUsernames(
+          roomMemberList: e.members);
       Map urls = await FirebaseController.getRoomMemberProfilePicURLs(
         roomMemberList: e.members,
       );
+      List<UserRecord> memberUserRecords =
+          await FirebaseController.getUserRecords(roomMemberList: e.members);
+
+      Map notifs = await FirebaseController.getRoomNotifs(memos);
       print('======================= URLS = $urls');
       MyDialog.circularProgressStop(state.context);
-      Navigator.pushNamed(
+      await Navigator.pushNamed(
         state.context,
         RoomScreen.routeName,
         arguments: {
@@ -121,13 +131,18 @@ class _Controller {
           Constant.ARG_USERRECORD: state.userRecord,
           Constant.ARG_USER_PROFILE_URL_MAP: urls,
           Constant.USER_USERNAME_MAP: memberUsernames,
+          Constant.ARG_NOTIFS: notifs,
+          Constant.ARG_USERRECORD_LIST: memberUserRecords,
+          Constant.ARG_ACTIVITY_FEED: state.activityFeed,
         },
       );
+
+      state.render(() {});
     } catch (e) {
       MyDialog.circularProgressStop(state.context);
       MyDialog.info(
         context: state.context,
-        title: 'getRoomPhotoMemoList ERROR',
+        title: 'getRoomPhotoMemoList or getNotifs or ERROR',
         content: '$e',
       );
     }

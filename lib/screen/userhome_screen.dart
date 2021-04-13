@@ -2,12 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
+import 'package:lesson3part1/screen/myview/myactivityelement.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
 import 'package:lesson3part1/screen/settings_screen.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
@@ -30,6 +32,8 @@ class _UserHomeState extends State<UserHomeScreen> {
   UserRecord userRecord;
   List<PhotoMemo> photoMemoList;
   List<Room> roomList;
+  List<Activity> activityFeed;
+  ListView activityView;
   GlobalKey<FormState> formKey = new GlobalKey<FormState>();
 
   @override
@@ -47,6 +51,7 @@ class _UserHomeState extends State<UserHomeScreen> {
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
     roomList ??= args[Constant.ARG_ROOMLIST];
     userRecord ??= args[Constant.ARG_USERRECORD];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
 
     print(roomList);
 
@@ -121,6 +126,7 @@ class _UserHomeState extends State<UserHomeScreen> {
                 user: user,
                 photoMemos: photoMemoList,
                 userRecord: userRecord,
+                activityFeed: activityFeed,
               ),
               IconButton(
                 onPressed: con.addRoom,
@@ -140,9 +146,9 @@ class _UserHomeState extends State<UserHomeScreen> {
                     arguments: {
                       Constant.ARG_USERRECORD: userRecord,
                       Constant.ARG_USER: user,
+                      Constant.ARG_ACTIVITY_FEED: activityFeed,
                     },
                   );
-
                   render(() {});
                 },
               ),
@@ -158,43 +164,7 @@ class _UserHomeState extends State<UserHomeScreen> {
           child: Icon(Icons.add),
           onPressed: con.addButton,
         ),
-        body: photoMemoList.length == 0
-            ? Text(
-                'No PhotoMemos Found',
-                style: Theme.of(context).textTheme.headline5,
-              )
-            : ListView.builder(
-                itemCount: photoMemoList.length,
-                itemBuilder: (BuildContext context, int index) => Container(
-                  color: con.deleteIndex != null && con.deleteIndex == index
-                      ? Theme.of(context).highlightColor
-                      : Theme.of(context).scaffoldBackgroundColor,
-                  child: ListTile(
-                    leading: MyImage.network(
-                      url: photoMemoList[index].photoURL,
-                      context: context,
-                    ),
-                    trailing: Icon(Icons.keyboard_arrow_right),
-                    title: Text(photoMemoList[index].title),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          photoMemoList[index].memo.length >= 20
-                              ? photoMemoList[index].memo.substring(0, 20) +
-                                  '...'
-                              : photoMemoList[index].memo,
-                        ),
-                        Text('Created By: ${photoMemoList[index].createdBy}'),
-                        Text('Shared With: ${photoMemoList[index].sharedWith}'),
-                        Text('Updated At: ${photoMemoList[index].timestamp}'),
-                      ],
-                    ),
-                    onTap: () => con.onTap(index),
-                    onLongPress: () => con.onLongPress(index),
-                  ),
-                ),
-              ),
+        body: con.getActivityFeed(activityFeed),
       ),
     );
   }
@@ -458,4 +428,58 @@ class _Controller {
           context: state.context, title: 'Search Error', content: '$e');
     }
   }
+
+  ListView getActivityFeed(List<Activity> activityFeed) {
+    return ListView.builder(
+      key: UniqueKey(),
+      itemCount: activityFeed.length,
+      itemBuilder: (BuildContext context, int index) => ActivityElement(
+        userRecord: state.userRecord,
+        activity: activityFeed[index],
+      ),
+    );
+  }
 }
+
+/*
+    old user home
+
+body: photoMemoList.length == 0
+            ? Text(
+                'No PhotoMemos Found',
+                style: Theme.of(context).textTheme.headline5,
+              )
+            : ListView.builder(
+                itemCount: photoMemoList.length,
+                itemBuilder: (BuildContext context, int index) => Container(
+                  color: con.deleteIndex != null && con.deleteIndex == index
+                      ? Theme.of(context).highlightColor
+                      : Theme.of(context).scaffoldBackgroundColor,
+                  child: ListTile(
+                    leading: MyImage.network(
+                      url: photoMemoList[index].photoURL,
+                      context: context,
+                    ),
+                    trailing: Icon(Icons.keyboard_arrow_right),
+                    title: Text(photoMemoList[index].title),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          photoMemoList[index].memo.length >= 20
+                              ? photoMemoList[index].memo.substring(0, 20) +
+                                  '...'
+                              : photoMemoList[index].memo,
+                        ),
+                        Text('Created By: ${photoMemoList[index].createdBy}'),
+                        Text('Shared With: ${photoMemoList[index].sharedWith}'),
+                        Text('Updated At: ${photoMemoList[index].timestamp}'),
+                      ],
+                    ),
+                    onTap: () => con.onTap(index),
+                    onLongPress: () => con.onLongPress(index),
+                  ),
+                ),
+              ),
+
+*/
