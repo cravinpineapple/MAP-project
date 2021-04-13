@@ -128,6 +128,7 @@ class _Controller {
   List<Comment> comments = [];
   Comment tempComment;
   bool detailedView = false;
+  Activity tempActivity;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -525,10 +526,27 @@ class _Controller {
           await FirebaseController.addComment(tempComment, memo);
 
       // sending activity feed to all users
-      // for (var m in state.room.members) {
+      tempActivity = Activity(
+        actionOwnerUsername: state.userRecord.username,
+        enumAction: ActivityAction.comment,
+        timestamp: tempComment.datePosted,
+        photoTitle: memo.title,
+        photoUrl: memo.photoURL,
+        commentMessage: tempComment.message,
+        roomName: state.room.roomName,
+      );
+      state.activityFeed.insert(0, tempActivity);
 
-      // }
+      for (var u in state.memberUserRecords) {
+        if (u.email == state.userRecord.email) {
+          tempActivity.actionOwnerUsername = 'I';
+          FirebaseController.addActivity(tempActivity, u);
+          tempActivity.actionOwnerUsername = state.userRecord.username;
+          continue;
+        }
 
+        FirebaseController.addActivity(tempActivity, u);
+      }
     } catch (e) {
       MyDialog.info(
         context: state.context,
