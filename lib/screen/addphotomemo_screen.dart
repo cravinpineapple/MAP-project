@@ -294,9 +294,11 @@ class _Controller {
       String docID = await FirebaseController.addPhotoMemo(tempMemo);
       tempMemo.docID = docID;
 
-      state.notif[docID] = Notif(notification: {});
-      state.notif[docID].docID =
-          await FirebaseController.addNotif(state.notif[docID], docID);
+      if (state.room != null) {
+        state.notif[docID] = Notif(notification: {});
+        state.notif[docID].docID =
+            await FirebaseController.addNotif(state.notif[docID], docID);
+      }
 
       if (state.room != null) {
         state.roomActualPhotoMemos.add(tempMemo);
@@ -310,24 +312,26 @@ class _Controller {
       state.photoMemoList.insert(0, tempMemo);
 
       // Give Activity Feed notification to all other room members
-      tempActivity = Activity(
-        enumAction: ActivityAction.photoUpload,
-        timestamp: tempMemo.timestamp,
-        actionOwnerUsername: state.userRecord.username,
-        photoUrl: tempMemo.photoURL,
-        roomName: state.room.roomName,
-      );
-      state.activityFeed.insert(0, tempActivity);
+      if (state.room != null) {
+        tempActivity = Activity(
+          enumAction: ActivityAction.photoUpload,
+          timestamp: tempMemo.timestamp,
+          actionOwnerUsername: state.userRecord.username,
+          photoUrl: tempMemo.photoURL,
+          roomName: state.room.roomName,
+        );
+        state.activityFeed.insert(0, tempActivity);
 
-      for (var u in state.otherMembers) {
-        if (u.email == state.userRecord.email) {
-          tempActivity.actionOwnerUsername = 'I';
+        for (var u in state.otherMembers) {
+          if (u.email == state.userRecord.email) {
+            tempActivity.actionOwnerUsername = 'I';
+            FirebaseController.addActivity(tempActivity, u);
+            tempActivity.actionOwnerUsername = state.userRecord.username;
+            continue;
+          }
+
           FirebaseController.addActivity(tempActivity, u);
-          tempActivity.actionOwnerUsername = state.userRecord.username;
-          continue;
         }
-
-        FirebaseController.addActivity(tempActivity, u);
       }
 
       MyDialog.circularProgressStop(state.context);
