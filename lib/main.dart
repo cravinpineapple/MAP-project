@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/myphotos_screen.dart';
+import 'package:lesson3part1/screen/similarphotos_screen.dart';
 import 'package:lesson3part1/screen/room_screen.dart';
 import 'package:lesson3part1/screen/settings_screen.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
@@ -39,6 +40,7 @@ class Lesson3Part1App extends StatelessWidget {
         RoomScreen.routeName: (context) => RoomScreen(),
         SettingsScreen.routeName: (context) => SettingsScreen(),
         MyPhotoScreen.routeName: (context) => MyPhotoScreen(),
+        SimilarPhotosScreen.routeName: (context) => SimilarPhotosScreen(),
       },
     );
   }

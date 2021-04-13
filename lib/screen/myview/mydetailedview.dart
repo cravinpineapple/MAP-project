@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:intl/intl.dart';
+import 'package:lesson3part1/screen/similarphotos_screen.dart';
+
+import '../../model/constant.dart';
+import '../../model/photomemo.dart';
 
 class DetailedView extends StatefulWidget {
+  final List<PhotoMemo> allRoomMemos;
   final PhotoMemo photoMemo;
   final int commentCount;
   final String ownerUsername;
@@ -11,6 +16,7 @@ class DetailedView extends StatefulWidget {
     @required this.photoMemo,
     @required this.commentCount,
     @required this.ownerUsername,
+    @required this.allRoomMemos,
   });
 
   @override
@@ -20,9 +26,12 @@ class DetailedView extends StatefulWidget {
 }
 
 class _DetailedViewState extends State<DetailedView> {
+  _Controller con;
   PhotoMemo photoMemo;
   int commentCount;
   String ownerUsername;
+  List<PhotoMemo> allRoomMemos;
+  List<PhotoMemo> filteredList;
 
   @override
   void initState() {
@@ -30,6 +39,9 @@ class _DetailedViewState extends State<DetailedView> {
     photoMemo = widget.photoMemo;
     commentCount = widget.commentCount;
     ownerUsername = widget.ownerUsername;
+    allRoomMemos = widget.allRoomMemos;
+    con = _Controller(this);
+    filteredList = [];
   }
 
   void render(fn) => setState(fn);
@@ -125,7 +137,11 @@ class _DetailedViewState extends State<DetailedView> {
                         size: 65.0,
                         color: Colors.grey[800],
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        con.filterPhotosOnMLLabels();
+                        Navigator.pushNamed(context, SimilarPhotosScreen.routeName,
+                            arguments: {Constant.ARG_PHOTOMEMOLIST: filteredList});
+                      },
                     ),
                   ),
                   Positioned(
@@ -151,5 +167,22 @@ class _DetailedViewState extends State<DetailedView> {
         ),
       ],
     );
+  }
+}
+
+class _Controller {
+  _DetailedViewState state;
+  _Controller(this.state);
+
+  void filterPhotosOnMLLabels() {
+    state.filteredList.clear();
+    List<dynamic> imageLabels = state.photoMemo.imageLabels;
+
+    for (var p in state.allRoomMemos)
+      for (var l in p.imageLabels)
+        if (imageLabels.contains(l) && p.docID != state.photoMemo.docID) {
+          state.filteredList.add(p);
+          break;
+        }
   }
 }

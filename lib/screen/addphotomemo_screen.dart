@@ -268,8 +268,8 @@ class _Controller {
         },
       );
 
-      List<dynamic> imageLabels = [];
-      List<dynamic> textLabels = [];
+      List<dynamic> imageLabels = <dynamic>[];
+      List<dynamic> textLabels = <dynamic>[];
       if (state.isImageMLSwitchedOn) {
         // image labels by ML
         state.render(() => state.progressMessage = 'ML Image Labeler Started');

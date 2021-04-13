@@ -232,8 +232,7 @@ class _Controller {
                 fit: BoxFit.cover,
                 clipBehavior: Clip.hardEdge,
                 child: MaterialButton(
-                    child: MyImage.network(
-                        url: m.photoURL, context: state.context),
+                    child: MyImage.network(url: m.photoURL, context: state.context),
                     onPressed: () {
                       focusMemoView(m);
                       state.render(() {});
@@ -246,8 +245,7 @@ class _Controller {
               top: 2.0,
               child: Container(
                 decoration: BoxDecoration(boxShadow: [
-                  BoxShadow(
-                      color: Colors.grey[600].withOpacity(.8), blurRadius: 5.0)
+                  BoxShadow(color: Colors.grey[600].withOpacity(.8), blurRadius: 5.0)
                 ]),
                 child: getNotificationIcon(
                   state.notifs[m.docID].notification[state.userRecord.email],
@@ -283,32 +281,23 @@ class _Controller {
       case 0:
         return SizedBox();
       case 1:
-        return Icon(Icons.filter_1_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_1_rounded, size: 36.0, color: notificationIconColor);
       case 2:
-        return Icon(Icons.filter_2_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_2_rounded, size: 36.0, color: notificationIconColor);
       case 3:
-        return Icon(Icons.filter_3_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_3_rounded, size: 36.0, color: notificationIconColor);
       case 4:
-        return Icon(Icons.filter_4_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_4_rounded, size: 36.0, color: notificationIconColor);
       case 5:
-        return Icon(Icons.filter_5_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_5_rounded, size: 36.0, color: notificationIconColor);
       case 6:
-        return Icon(Icons.filter_6_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_6_rounded, size: 36.0, color: notificationIconColor);
       case 7:
-        return Icon(Icons.filter_7_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_7_rounded, size: 36.0, color: notificationIconColor);
       case 8:
-        return Icon(Icons.filter_8_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_8_rounded, size: 36.0, color: notificationIconColor);
       case 9:
-        return Icon(Icons.filter_9_rounded,
-            size: 36.0, color: notificationIconColor);
+        return Icon(Icons.filter_9_rounded, size: 36.0, color: notificationIconColor);
       default:
         return Icon(Icons.filter_9_plus_rounded,
             size: 36.0, color: notificationIconColor);
@@ -320,11 +309,9 @@ class _Controller {
     UserRecord photoMemoOwner;
     try {
       state.notifs[m.docID].notification[state.userRecord.email] = 0;
-      await FirebaseController.updateUserNotifications(
-          m, state.notifs[m.docID]);
+      await FirebaseController.updateUserNotifications(m, state.notifs[m.docID]);
       comments = await FirebaseController.getComments(memo: m);
-      photoMemoOwner =
-          await FirebaseController.getUserRecord(email: m.createdBy);
+      photoMemoOwner = await FirebaseController.getUserRecord(email: m.createdBy);
       // getting comment owner username & profile pic from firebase
       for (var c in comments) {
         UserRecord userR =
@@ -387,14 +374,13 @@ class _Controller {
                                 !detailedView
                                     ? Icons.analytics_outlined
                                     : Icons.comment_outlined,
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.8),
+                                color: Theme.of(context).primaryColor.withOpacity(0.8),
                                 size: !detailedView ? 50.0 : 40.0,
                               ),
                               onPressed: () async {
-                                commentCount = await FirebaseController
-                                    .getPhotomemoCommentCount(photoMemo: m);
+                                commentCount =
+                                    await FirebaseController.getPhotomemoCommentCount(
+                                        photoMemo: m);
                                 setState(() => detailedView = !detailedView);
                               },
                             ),
@@ -419,6 +405,7 @@ class _Controller {
                                 photoMemo: m,
                                 commentCount: commentCount,
                                 ownerUsername: photoMemoOwner.username,
+                                allRoomMemos: state.roomMemos,
                               ),
                       ),
                       !detailedView
@@ -437,13 +424,11 @@ class _Controller {
                                           Row(
                                             children: [
                                               Container(
-                                                margin:
-                                                    EdgeInsets.only(left: 10.0),
+                                                margin: EdgeInsets.only(left: 10.0),
                                                 width: focusWidth * 0.75,
                                                 child: TextFormField(
                                                   decoration: InputDecoration(
-                                                    hintText:
-                                                        'Leave a comment!',
+                                                    hintText: 'Leave a comment!',
                                                   ),
                                                   autocorrect: true,
                                                   obscureText: false,
@@ -456,19 +441,17 @@ class _Controller {
                                                     top: 12.0, left: 10.0),
                                                 child: ClipOval(
                                                   child: Container(
-                                                    color:
-                                                        Theme.of(state.context)
-                                                            .primaryColor,
+                                                    color: Theme.of(state.context)
+                                                        .primaryColor,
                                                     child: IconButton(
                                                       icon: Icon(
-                                                        Icons
-                                                            .arrow_forward_rounded,
+                                                        Icons.arrow_forward_rounded,
                                                       ),
                                                       iconSize: 30.0,
                                                       onPressed: () {
                                                         uploadComment(m);
-                                                        setState(() => comments
-                                                            .add(tempComment));
+                                                        setState(() =>
+                                                            comments.add(tempComment));
                                                       },
                                                     ),
                                                   ),
@@ -513,8 +496,7 @@ class _Controller {
       // updating comment error
       // why did this happen
       // we took away await. dont await
-      FirebaseController.updateUserNotifications(
-          memo, state.notifs[memo.docID]);
+      FirebaseController.updateUserNotifications(memo, state.notifs[memo.docID]);
       tempComment = Comment(
         commentOwnerEmail: state.userRecord.email,
         profilePicURL: state.userRecord.profilePictureURL,
@@ -522,8 +504,7 @@ class _Controller {
         message: message,
         datePosted: DateTime.now(),
       );
-      tempComment.docID =
-          await FirebaseController.addComment(tempComment, memo);
+      tempComment.docID = await FirebaseController.addComment(tempComment, memo);
 
       // sending activity feed to all users
       tempActivity = Activity(
