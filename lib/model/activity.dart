@@ -13,6 +13,8 @@ class Activity {
 
   ActivityAction enumAction;
 
+  String actionOwnerUsername;
+
   // FOR COMMENT PHOTO, UPLOAD PHOTO, NEW PROFILE PIC
   String photoUrl;
 
@@ -29,6 +31,7 @@ class Activity {
     this.commentMessage,
     this.roomName,
     this.photoTitle,
+    this.actionOwnerUsername,
   }) {
     this.action = enumAction.index;
   }
@@ -40,6 +43,7 @@ class Activity {
   static const COMMENT_MESSAGE = 'commentMessage';
   static const PHOTO_TITLE = 'photoTitle';
   static const ROOM_NAME = 'roomName';
+  static const ACTION_OWNER_USERNAME = 'actionOwnerUsername';
 
   Map<String, dynamic> serialize() {
     return {
@@ -49,6 +53,7 @@ class Activity {
       COMMENT_MESSAGE: this.commentMessage,
       ROOM_NAME: this.roomName,
       PHOTO_TITLE: this.photoTitle,
+      ACTION_OWNER_USERNAME: this.actionOwnerUsername
     };
   }
 
@@ -64,6 +69,7 @@ class Activity {
       commentMessage: doc[COMMENT_MESSAGE],
       roomName: doc[ROOM_NAME],
       photoTitle: doc[PHOTO_TITLE],
+      actionOwnerUsername: doc[ACTION_OWNER_USERNAME],
     );
   }
 }

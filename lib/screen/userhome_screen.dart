@@ -126,6 +126,7 @@ class _UserHomeState extends State<UserHomeScreen> {
                 user: user,
                 photoMemos: photoMemoList,
                 userRecord: userRecord,
+                activityFeed: activityFeed,
               ),
               IconButton(
                 onPressed: con.addRoom,
@@ -148,7 +149,6 @@ class _UserHomeState extends State<UserHomeScreen> {
                       Constant.ARG_ACTIVITY_FEED: activityFeed,
                     },
                   );
-
                   render(() {});
                 },
               ),

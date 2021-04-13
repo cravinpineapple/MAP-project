@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/comment.dart';
-import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
@@ -36,6 +36,8 @@ class _RoomScreenState extends State<RoomScreen> {
   Map<String, String> memberProfilePicURLS;
   Map<dynamic, dynamic> memberUsernames;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  List<UserRecord> memberUserRecords;
+  List<Activity> activityFeed;
 
   @override
   void initState() {
@@ -56,6 +58,8 @@ class _RoomScreenState extends State<RoomScreen> {
     memberProfilePicURLS ??= args[Constant.ARG_USER_PROFILE_URL_MAP];
     memberUsernames ??= args[Constant.USER_USERNAME_MAP];
     notifs ??= args[Constant.ARG_NOTIFS];
+    memberUserRecords ??= args[Constant.ARG_USERRECORD_LIST];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
 
     print(notifs);
 
@@ -96,15 +100,20 @@ class _RoomScreenState extends State<RoomScreen> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () => Navigator.pushNamed(
-            context, AddPhotoMemoScreen.routeName,
-            arguments: {
-              Constant.ARG_USER: user,
-              Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
-              Constant.ARG_ROOM: room,
-              Constant.ARG_PHOTOMEMOLIST: photoMemos,
-              Constant.ARG_ROOM_MEMOLIST: roomMemos,
-              Constant.ARG_NOTIFS: notifs,
-            }),
+          context,
+          AddPhotoMemoScreen.routeName,
+          arguments: {
+            Constant.ARG_USER: user,
+            Constant.ARG_ROOM_MEMO_DOCIDS: room.memos,
+            Constant.ARG_ROOM: room,
+            Constant.ARG_PHOTOMEMOLIST: photoMemos,
+            Constant.ARG_ROOM_MEMOLIST: roomMemos,
+            Constant.ARG_NOTIFS: notifs,
+            Constant.ARG_USERRECORD: userRecord,
+            Constant.ARG_USERRECORD_LIST: memberUserRecords,
+            Constant.ARG_ACTIVITY_FEED: activityFeed,
+          },
+        ),
       ),
       body: con.generateWall(),
     );
@@ -514,6 +523,12 @@ class _Controller {
       );
       tempComment.docID =
           await FirebaseController.addComment(tempComment, memo);
+
+      // sending activity feed to all users
+      // for (var m in state.room.members) {
+
+      // }
+
     } catch (e) {
       MyDialog.info(
         context: state.context,

@@ -384,6 +384,24 @@ class FirebaseController {
     );
   }
 
+  static Future<List<UserRecord>> getUserRecords({
+    @required List<dynamic> roomMemberList,
+  }) async {
+    List<UserRecord> result = [];
+
+    for (var e in roomMemberList) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(Constant.USERRECORD_COLLECTION)
+          .where(UserRecord.EMAIL, isEqualTo: e)
+          .get();
+
+      querySnapshot.docs.forEach(
+          (doc) => result.add(UserRecord.deserialize(doc.data(), doc.id)));
+    }
+
+    return result;
+  }
+
   static Future<void> updateUserNotifications(
       PhotoMemo photoMemo, Notif notif) async {
     FirebaseFirestore.instance

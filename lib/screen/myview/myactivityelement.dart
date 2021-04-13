@@ -50,8 +50,7 @@ class _ActivityElementState extends State<ActivityElement> {
               fit: BoxFit.cover,
               child: MyImage.network(
                 context: context,
-                url:
-                    'https://firebasestorage.googleapis.com/v0/b/cmsc4303-noahs-lesson3part1.appspot.com/o/profile_pictures%2FR4TpxqwqwdeAlXW55zJ0PNZ8DnJ2%2F2021-04-05%2016%3A22%3A23.446977?alt=media&token=cfca8681-fab6-4371-9f09-31d734cacd7d',
+                url: activity.photoUrl,
               ),
             ),
           ),
@@ -84,12 +83,12 @@ class _Controller {
             ? state.activity.commentMessage.substring(0, 20) + '...'
             : state.activity.commentMessage;
         return Text(
-            'Someone left a comment on ${state.activity.photoTitle} in room ${state.activity.roomName}\n$commentMessage');
+            '${state.activity.actionOwnerUsername} left a comment on ${state.activity.photoTitle} in room ${state.activity.roomName}\n$commentMessage');
       case ActivityAction.myProfileChange:
         return Text('You updated your profile.');
       case ActivityAction.photoUpload:
         return Text(
-            'Someone uploaded a new photo in ${state.activity.roomName}');
+            '${state.activity.actionOwnerUsername} uploaded a new photo in ${state.activity.roomName}');
       default:
         return Text('Uh oh');
     }

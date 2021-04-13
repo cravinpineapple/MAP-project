@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lesson3part1/model/activity.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/notif.dart';
 import 'package:lesson3part1/model/photomemo.dart';
 import 'package:lesson3part1/model/room.dart';
+import 'package:lesson3part1/model/userrecord.dart';
 
 import '../controller/firebasecontroller.dart';
 import 'myview/mydialog.dart';
@@ -24,6 +26,12 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   _Controller con;
   User user;
+
+  // uploading photo
+  UserRecord userRecord;
+  // all other members that need to be notified
+  List<UserRecord> otherMembers;
+
   List<PhotoMemo> photoMemoList;
   List<dynamic> roomMemoList;
   List<PhotoMemo> roomActualPhotoMemos;
@@ -31,6 +39,7 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
   File photo;
   String progressMessage;
   Room room;
+  List<Activity> activityFeed;
 
   @override
   void initState() {
@@ -49,6 +58,9 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
     roomActualPhotoMemos ??= args[Constant.ARG_ROOM_MEMOLIST];
     room ??= args[Constant.ARG_ROOM];
     notif ??= args[Constant.ARG_NOTIFS];
+    userRecord ??= args[Constant.ARG_USERRECORD];
+    otherMembers ??= args[Constant.ARG_USERRECORD_LIST];
+    activityFeed ??= args[Constant.ARG_ACTIVITY_FEED];
 
     String title = room != null ? 'Upload Photo' : 'Upload Photo Privately';
 
@@ -115,7 +127,8 @@ class _AddPhotoMemoState extends State<AddPhotoMemoScreen> {
               ),
               progressMessage == null
                   ? SizedBox(height: 1.0)
-                  : Text(progressMessage, style: Theme.of(context).textTheme.headline6),
+                  : Text(progressMessage,
+                      style: Theme.of(context).textTheme.headline6),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Title',
@@ -159,6 +172,7 @@ class _Controller {
   _AddPhotoMemoState state;
   _Controller(this.state);
   PhotoMemo tempMemo = PhotoMemo();
+  Activity tempActivity;
 
   void save() async {
     if (!state.formKey.currentState.validate()) return;
@@ -179,7 +193,8 @@ class _Controller {
               state.progressMessage = null;
             else {
               progress *= 100;
-              state.progressMessage = 'Uploading: ' + progress.toStringAsFixed(1) + '%';
+              state.progressMessage =
+                  'Uploading: ' + progress.toStringAsFixed(1) + '%';
             }
           });
         },
@@ -216,6 +231,27 @@ class _Controller {
 
       state.photoMemoList.insert(0, tempMemo);
 
+      // Give Activity Feed notification to all other room members
+      tempActivity = Activity(
+        enumAction: ActivityAction.photoUpload,
+        timestamp: tempMemo.timestamp,
+        actionOwnerUsername: state.userRecord.username,
+        photoUrl: tempMemo.photoURL,
+        roomName: state.room.roomName,
+      );
+      state.activityFeed.insert(0, tempActivity);
+
+      for (var u in state.otherMembers) {
+        if (u.email == state.userRecord.email) {
+          tempActivity.actionOwnerUsername = 'I';
+          FirebaseController.addActivity(tempActivity, u);
+          tempActivity.actionOwnerUsername = state.userRecord.username;
+          continue;
+        }
+
+        FirebaseController.addActivity(tempActivity, u);
+      }
+
       MyDialog.circularProgressStop(state.context);
       Navigator.pop(state.context); // return to user home screen
     } catch (e) {
@@ -243,7 +279,8 @@ class _Controller {
         _imageFile = await _picker.getImage(source: ImageSource.gallery);
       }
 
-      if (_imageFile == null) return; // selection from camera/gallery was canceled
+      if (_imageFile == null)
+        return; // selection from camera/gallery was canceled
       state.render(() => state.photo = File(_imageFile.path));
     } catch (e) {
       MyDialog.info(
@@ -264,7 +301,8 @@ class _Controller {
 
   void saveSharedWith(String value) {
     if (value.trim().length != 0) {
-      tempMemo.sharedWith = value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
+      tempMemo.sharedWith =
+          value.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
     }
   }
 }

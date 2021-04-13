@@ -13,6 +13,7 @@ class Constant {
   static const USER_USERNAME_MAP = 'roomMemberUsernames';
   static const ARG_NOTIFS = 'argNotif';
   static const ARG_ACTIVITY_FEED = 'activityFeed';
+  static const ARG_USERRECORD_LIST = 'userRecordList';
 
   static const SRC_CAMERA = 'camera';
   static const SRC_GALLERY = 'gallery';
