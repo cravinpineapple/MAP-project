@@ -252,7 +252,8 @@ class FirebaseController {
     final TextRecognizer textRecognizer = FirebaseVision.instance.cloudTextRecognizer();
     final VisionText visionText = await textRecognizer.processImage(visionImage);
 
-    List<dynamic> labels = visionText.text.trim().split(RegExp("[!._,@?\n ]")).toList();
+    List<dynamic> labels =
+        visionText.text.toLowerCase().trim().split(RegExp("[!._,@?\n ]")).toList();
     labels.removeWhere((element) => element == '' || element == ' ');
     return labels;
   }
