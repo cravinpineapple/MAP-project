@@ -283,6 +283,7 @@ class _Controller {
         state.render(() => state.progressMessage = null);
       }
 
+      imageLabels.addAll(textLabels);
       tempMemo.photoFilename = photoInfo[Constant.ARG_FILENAME];
       tempMemo.photoURL = photoInfo[Constant.ARG_DOWNLOADURL];
       tempMemo.roomName = state.room == null ? null : state.room.roomName;

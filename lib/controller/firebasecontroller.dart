@@ -252,15 +252,7 @@ class FirebaseController {
     final TextRecognizer textRecognizer = FirebaseVision.instance.cloudTextRecognizer();
     final VisionText visionText = await textRecognizer.processImage(visionImage);
 
-    print('======================================= VISION TEXT');
-    print(visionText.text);
-
-    List<dynamic> labels = <dynamic>[];
-
-    // for (ImageLabel label in cloudLabels) {
-    //   if (label.confidence >= Constant.MIN_ML_CONFIDENCE)
-    //     labels.add(label.text.toLowerCase());
-    // }
+    List<dynamic> labels = visionText.text.split(RegExp('/\w+/g')).toList();
 
     return labels;
   }
