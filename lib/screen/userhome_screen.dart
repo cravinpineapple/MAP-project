@@ -9,8 +9,10 @@ import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/addphotomemo_screen.dart';
 import 'package:lesson3part1/screen/detailedview_screen.dart';
+import 'package:lesson3part1/screen/myphotos_screen.dart';
 import 'package:lesson3part1/screen/myview/myactivityelement.dart';
 import 'package:lesson3part1/screen/myview/mydialog.dart';
+import 'package:lesson3part1/screen/room_screen.dart';
 import 'package:lesson3part1/screen/settings_screen.dart';
 import 'package:lesson3part1/screen/sharedwith_screen.dart';
 import 'package:lesson3part1/screen/myview/myroomlist.dart';
@@ -111,6 +113,11 @@ class _UserHomeState extends State<UserHomeScreen> {
                 ),
                 accountName: Text(userRecord.username),
                 accountEmail: Text(user.email),
+              ),
+              ListTile(
+                leading: Icon(Icons.photo),
+                title: Text('My Photos'),
+                onTap: con.myPhotos,
               ),
               ListTile(
                 leading: Icon(Icons.people),
@@ -348,20 +355,26 @@ class _Controller {
     state.render(() {});
   }
 
+  void myPhotos() {
+    Navigator.pushNamed(state.context, MyPhotoScreen.routeName, arguments: {
+      Constant.ARG_PHOTOMEMOLIST: state.photoMemoList,
+      Constant.ARG_USERRECORD: state.userRecord,
+    });
+  }
+
   void sharedWithMe() async {
     try {
-      List<PhotoMemo> photoMemoList =
+      List<PhotoMemo> memosSharedWithMe =
           await FirebaseController.getPhotoMemoSharedWithMe(
               email: state.user.email);
 
       await Navigator.pushNamed(state.context, SharedWithScreen.routeName,
           arguments: {
             Constant.ARG_USER: state.user,
+            Constant.ARG_USERRECORD: state.userRecord,
             Constant.ARG_PHOTOMEMOLIST:
-                photoMemoList, // list of shared with email we retrieved
+                memosSharedWithMe, // list of shared with email we retrieved
           });
-
-      Navigator.pop(state.context); // closes the drawer
     } catch (e) {
       MyDialog.info(
           context: state.context,
@@ -440,46 +453,3 @@ class _Controller {
     );
   }
 }
-
-/*
-    old user home
-
-body: photoMemoList.length == 0
-            ? Text(
-                'No PhotoMemos Found',
-                style: Theme.of(context).textTheme.headline5,
-              )
-            : ListView.builder(
-                itemCount: photoMemoList.length,
-                itemBuilder: (BuildContext context, int index) => Container(
-                  color: con.deleteIndex != null && con.deleteIndex == index
-                      ? Theme.of(context).highlightColor
-                      : Theme.of(context).scaffoldBackgroundColor,
-                  child: ListTile(
-                    leading: MyImage.network(
-                      url: photoMemoList[index].photoURL,
-                      context: context,
-                    ),
-                    trailing: Icon(Icons.keyboard_arrow_right),
-                    title: Text(photoMemoList[index].title),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          photoMemoList[index].memo.length >= 20
-                              ? photoMemoList[index].memo.substring(0, 20) +
-                                  '...'
-                              : photoMemoList[index].memo,
-                        ),
-                        Text('Created By: ${photoMemoList[index].createdBy}'),
-                        Text('Shared With: ${photoMemoList[index].sharedWith}'),
-                        Text('Updated At: ${photoMemoList[index].timestamp}'),
-                      ],
-                    ),
-                    onTap: () => con.onTap(index),
-                    onLongPress: () => con.onLongPress(index),
-                  ),
-                ),
-              ),
-
-*/

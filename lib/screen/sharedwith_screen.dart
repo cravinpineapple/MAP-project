@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lesson3part1/controller/firebasecontroller.dart';
+import 'package:lesson3part1/model/userrecord.dart';
+import 'package:lesson3part1/screen/myview/mydetailedview.dart';
 
 import '../model/constant.dart';
 import '../model/photomemo.dart';
@@ -17,7 +20,8 @@ class SharedWithScreen extends StatefulWidget {
 class _SharedWithState extends State<SharedWithScreen> {
   _Controller con;
   User user;
-  List<PhotoMemo> photoMemoList;
+  List<PhotoMemo> memosSharedWithMe;
+  UserRecord userRecord;
 
   @override
   void initState() {
@@ -30,46 +34,18 @@ class _SharedWithState extends State<SharedWithScreen> {
   @override
   Widget build(BuildContext context) {
     Map args = ModalRoute.of(context).settings.arguments;
-    user ??= args[Constant.ARG_USER];
-    photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
+    memosSharedWithMe ??= args[Constant.ARG_PHOTOMEMOLIST];
+    userRecord ??= args[Constant.ARG_USERRECORD];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Shared With Me'),
+        title: Text('My Photos'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: photoMemoList.length == 0
-          ? Text(
-              'No PhotoMemos Shared With me',
-              style: Theme.of(context).textTheme.headline5,
-            )
-          : ListView.builder(
-              itemCount: photoMemoList.length,
-              itemBuilder: (context, index) => Card(
-                elevation: 7.0,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.4,
-                        child: MyImage.network(
-                          url: photoMemoList[index].photoURL,
-                          context: context,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Title: ${photoMemoList[index].title}',
-                      style: Theme.of(context).textTheme.headline6,
-                    ),
-                    Text('Memo: ${photoMemoList[index].memo}'),
-                    Text('Created By: ${photoMemoList[index].createdBy}'),
-                    Text('Updated At: ${photoMemoList[index].timestamp}'),
-                    Text('Shared With: ${photoMemoList[index].sharedWith}'),
-                  ],
-                ),
-              ),
-            ),
+      body: con.generateWall(),
     );
   }
 }
@@ -77,4 +53,122 @@ class _SharedWithState extends State<SharedWithScreen> {
 class _Controller {
   _SharedWithState state;
   _Controller(this.state);
+
+  Widget generateWall() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          children: getRows(),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> getRows() {
+    List<Color> colors = [Colors.red, Colors.blue, Colors.green];
+    var width = MediaQuery.of(state.context).size.width * .31;
+    List<Widget> w = [];
+    int counter = 0;
+    int size = state.memosSharedWithMe.length; // 3
+    Row row;
+    List<Widget> widgies = [];
+
+    for (var m in state.memosSharedWithMe) {
+      // 3
+      widgies.add(
+        Stack(
+          children: [
+            Container(
+              width: width,
+              height: width,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: MaterialButton(
+                    child: MyImage.network(
+                        url: m.photoURL, context: state.context),
+                    onPressed: () {
+                      focusMemoView(m);
+                      state.render(() {});
+                    }),
+              ),
+              color: Colors.transparent,
+            ),
+          ],
+        ),
+      );
+      size--;
+      if (counter != 2) widgies.add(SizedBox(width: 2.0));
+      if (counter == 2) {
+        row = Row(children: widgies);
+        w.add(row);
+        w.add(SizedBox(height: 5.0));
+        widgies = [];
+        counter = -1;
+      }
+      counter++;
+    }
+    print(size);
+    if (size == 0) {
+      row = Row(children: widgies);
+      w.add(row);
+      w.add(SizedBox());
+    }
+    return w;
+  }
+
+  void focusMemoView(PhotoMemo m) async {
+    int commentCount =
+        await FirebaseController.getPhotomemoCommentCount(photoMemo: m);
+
+    var focusWidth = MediaQuery.of(state.context).size.width * 0.8;
+    var focusHeight = MediaQuery.of(state.context).size.height * 0.8;
+    showDialog(
+      context: state.context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            contentPadding: EdgeInsets.all(0.0),
+            backgroundColor: Colors.transparent,
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Column(
+                    children: [
+                      SizedBox(height: 0.0),
+                      Stack(
+                        children: [
+                          Container(
+                            height: focusWidth,
+                            width: focusWidth,
+                            color: Colors.transparent,
+                            child: FittedBox(
+                                fit: BoxFit.cover,
+                                clipBehavior: Clip.hardEdge,
+                                child: MyImage.network(
+                                    url: m.photoURL, context: state.context)),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        height: focusHeight * 0.48,
+                        width: focusWidth,
+                        color: Colors.grey[800],
+                        child: DetailedView(
+                          photoMemo: m,
+                          commentCount: commentCount,
+                          ownerUsername: state.userRecord.username,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

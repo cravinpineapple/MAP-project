@@ -16,7 +16,7 @@ class DetailedView extends StatefulWidget {
     @required this.photoMemo,
     @required this.commentCount,
     @required this.ownerUsername,
-    @required this.allRoomMemos,
+    this.allRoomMemos,
   });
 
   @override
@@ -33,6 +33,11 @@ class _DetailedViewState extends State<DetailedView> {
   List<PhotoMemo> allRoomMemos;
   List<PhotoMemo> filteredList;
 
+  DateFormat formatter = DateFormat('EEE, M/d/y H:mm');
+  double contentFont = 20.0;
+  double headerFont = 15.0;
+  double spacer = 20.0;
+
   @override
   void initState() {
     super.initState();
@@ -48,10 +53,6 @@ class _DetailedViewState extends State<DetailedView> {
 
   @override
   Widget build(BuildContext context) {
-    DateFormat formatter = DateFormat('EEE, M/d/y H:mm');
-    double contentFont = 20.0;
-    double headerFont = 15.0;
-    double spacer = 20.0;
     Color contentColor = Theme.of(context).primaryColor;
 
     return SingleChildScrollView(
@@ -60,6 +61,7 @@ class _DetailedViewState extends State<DetailedView> {
           SizedBox(
             height: 9.0,
           ),
+          allRoomMemos == null ? con.getMyPhotosInfo(contentColor) : SizedBox(),
           Text(
             'Photo Title',
             style: TextStyle(
@@ -126,23 +128,29 @@ class _DetailedViewState extends State<DetailedView> {
           SizedBox(
             height: spacer,
           ),
-          Text(
-            'Number of Comments',
-            style: TextStyle(
-              fontSize: headerFont,
-            ),
-          ),
-          Text(
-            commentCount.toString(),
-            style: TextStyle(
-              fontSize: contentFont,
-              fontWeight: FontWeight.bold,
-              color: contentColor,
-            ),
-          ),
-          SizedBox(
-            height: spacer,
-          ),
+          photoMemo.roomName != null
+              ? Text(
+                  'Number of Comments',
+                  style: TextStyle(
+                    fontSize: headerFont,
+                  ),
+                )
+              : SizedBox(),
+          photoMemo.roomName != null
+              ? Text(
+                  commentCount.toString(),
+                  style: TextStyle(
+                    fontSize: contentFont,
+                    fontWeight: FontWeight.bold,
+                    color: contentColor,
+                  ),
+                )
+              : SizedBox(),
+          photoMemo.roomName != null
+              ? SizedBox(
+                  height: spacer,
+                )
+              : SizedBox(),
           Text(
             'ML Data',
             style: TextStyle(
@@ -161,64 +169,69 @@ class _DetailedViewState extends State<DetailedView> {
           SizedBox(
             height: spacer,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(),
-                flex: 1,
-              ),
-              Expanded(
-                flex: 2,
-                child: Stack(
+          allRoomMemos != null
+              ? Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 5.0, top: 4.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                        height: 70.0,
-                        width: 200.0,
+                    Expanded(
+                      child: SizedBox(),
+                      flex: 1,
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 5.0, top: 4.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                              height: 70.0,
+                              width: 200.0,
+                            ),
+                          ),
+                          Positioned(
+                            left: 43.0,
+                            bottom: 36.0,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.pageview,
+                                size: 65.0,
+                                color: Colors.grey[800],
+                              ),
+                              onPressed: () {
+                                con.filterPhotosOnMLLabels();
+                                Navigator.pushNamed(
+                                    context, SimilarPhotosScreen.routeName,
+                                    arguments: {
+                                      Constant.ARG_PHOTOMEMOLIST: filteredList
+                                    });
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 1.0,
+                            left: 20.0,
+                            child: Text(
+                              'Similar Photos',
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Positioned(
-                      left: 43.0,
-                      bottom: 36.0,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.pageview,
-                          size: 65.0,
-                          color: Colors.grey[800],
-                        ),
-                        onPressed: () {
-                          con.filterPhotosOnMLLabels();
-                          Navigator.pushNamed(context, SimilarPhotosScreen.routeName,
-                              arguments: {Constant.ARG_PHOTOMEMOLIST: filteredList});
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 1.0,
-                      left: 20.0,
-                      child: Text(
-                        'Similar Photos',
-                        style: TextStyle(
-                          fontSize: 20.0,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    Expanded(
+                      child: SizedBox(),
+                      flex: 1,
                     ),
                   ],
-                ),
-              ),
-              Expanded(
-                child: SizedBox(),
-                flex: 1,
-              ),
-            ],
-          ),
+                )
+              : SizedBox(),
           SizedBox(
             height: spacer,
           )
@@ -242,5 +255,39 @@ class _Controller {
           state.filteredList.add(p);
           break;
         }
+  }
+
+  Widget getMyPhotosInfo(Color contentColor) {
+    String locationText;
+
+    if (state.photoMemo.roomName != null)
+      locationText = 'Uploaded in room \"${state.photoMemo.roomName}\"';
+    else if (state.photoMemo.sharedWith.isNotEmpty)
+      locationText = 'Shared with ${state.photoMemo.sharedWith}';
+    else
+      locationText = 'Photo is private';
+
+    return Column(
+      children: [
+        Text(
+          'Photo Upload Location',
+          style: TextStyle(
+            fontSize: state.headerFont,
+          ),
+        ),
+        Text(
+          locationText,
+          style: TextStyle(
+            fontSize: state.contentFont,
+            fontWeight: FontWeight.bold,
+            color: contentColor,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(
+          height: state.spacer,
+        )
+      ],
+    );
   }
 }
