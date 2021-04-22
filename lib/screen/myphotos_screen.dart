@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:lesson3part1/controller/firebasecontroller.dart';
 import 'package:lesson3part1/model/constant.dart';
 import 'package:lesson3part1/model/photomemo.dart';
+import 'package:lesson3part1/model/room.dart';
 import 'package:lesson3part1/model/userrecord.dart';
 import 'package:lesson3part1/screen/myview/mydetailedview.dart';
 import 'package:lesson3part1/screen/myview/myimage.dart';
+
+import 'myview/mydialog.dart';
 
 class MyPhotoScreen extends StatefulWidget {
   static const routeName = '/myPhotosScreen';
@@ -20,6 +23,7 @@ class _MyPhotoScreenState extends State<MyPhotoScreen> {
   _Controller con;
   List<PhotoMemo> photoMemoList;
   UserRecord userRecord;
+  List<Room> roomList;
 
   @override
   void initState() {
@@ -34,6 +38,7 @@ class _MyPhotoScreenState extends State<MyPhotoScreen> {
     Map args = ModalRoute.of(context).settings.arguments;
     photoMemoList ??= args[Constant.ARG_PHOTOMEMOLIST];
     userRecord ??= args[Constant.ARG_USERRECORD];
+    roomList ??= args[Constant.ARG_ROOMLIST];
 
     return Scaffold(
       appBar: AppBar(
@@ -42,6 +47,14 @@ class _MyPhotoScreenState extends State<MyPhotoScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          con.deleteMemo != null
+              ? IconButton(icon: Icon(Icons.cancel), onPressed: con.cancelDelete)
+              : SizedBox(),
+          con.deleteMemo != null
+              ? IconButton(icon: Icon(Icons.delete), onPressed: con.delete)
+              : SizedBox(),
+        ],
       ),
       body: con.generateWall(),
     );
@@ -51,6 +64,7 @@ class _MyPhotoScreenState extends State<MyPhotoScreen> {
 class _Controller {
   _MyPhotoScreenState state;
   _Controller(this.state);
+  PhotoMemo deleteMemo;
 
   Widget generateWall() {
     return SingleChildScrollView(
@@ -61,6 +75,36 @@ class _Controller {
         ),
       ),
     );
+  }
+
+  void onLongPress(PhotoMemo m) {
+    state.render(() => deleteMemo = m);
+  }
+
+  void cancelDelete() {
+    state.render(() => deleteMemo = null);
+  }
+
+  void delete() async {
+    try {
+      var room = state.roomList.where((r) => deleteMemo.roomName == r.roomName);
+      room.elementAt(0).memos.removeWhere((memo) => deleteMemo.docID == memo);
+      await FirebaseController.updateRoom(
+          emails: room.elementAt(0).members, room: room.elementAt(0));
+      await FirebaseController.deletePhotoMemo(deleteMemo);
+      state.render(
+        () {
+          state.photoMemoList.remove(deleteMemo);
+          deleteMemo = null;
+        },
+      );
+    } catch (e) {
+      MyDialog.info(
+        context: state.context,
+        title: 'delete photomemo error',
+        content: '$e',
+      );
+    }
   }
 
   List<Widget> getRows() {
@@ -84,12 +128,13 @@ class _Controller {
                 fit: BoxFit.cover,
                 clipBehavior: Clip.hardEdge,
                 child: MaterialButton(
-                    child: MyImage.network(
-                        url: m.photoURL, context: state.context),
-                    onPressed: () {
-                      focusMemoView(m);
-                      state.render(() {});
-                    }),
+                  child: MyImage.network(url: m.photoURL, context: state.context),
+                  onPressed: () {
+                    focusMemoView(m);
+                    state.render(() {});
+                  },
+                  onLongPress: () => onLongPress(m),
+                ),
               ),
               color: Colors.transparent,
             ),
@@ -117,8 +162,7 @@ class _Controller {
   }
 
   void focusMemoView(PhotoMemo m) async {
-    int commentCount =
-        await FirebaseController.getPhotomemoCommentCount(photoMemo: m);
+    int commentCount = await FirebaseController.getPhotomemoCommentCount(photoMemo: m);
 
     var focusWidth = MediaQuery.of(state.context).size.width * 0.8;
     var focusHeight = MediaQuery.of(state.context).size.height * 0.8;

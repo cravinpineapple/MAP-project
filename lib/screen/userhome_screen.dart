@@ -58,8 +58,7 @@ class _UserHomeState extends State<UserHomeScreen> {
     print(roomList);
 
     return WillPopScope(
-      onWillPop: () =>
-          Future.value(false), // disables android system back button
+      onWillPop: () => Future.value(false), // disables android system back button
       child: Scaffold(
         appBar: AppBar(
           // title: Text('User Home'),
@@ -224,10 +223,8 @@ class _Controller {
                 formKey.currentState.save();
 
                 if (members.trim().length != 0) {
-                  membersList = members
-                      .split(RegExp('(,| )+'))
-                      .map((e) => e.trim())
-                      .toList();
+                  membersList =
+                      members.split(RegExp('(,| )+')).map((e) => e.trim()).toList();
                 }
 
                 List<String> removeList = [];
@@ -242,9 +239,7 @@ class _Controller {
                 membersList.add(state.user.email);
 
                 Room tempRoom = Room(
-                    roomName: roomName,
-                    members: membersList,
-                    owner: state.user.email);
+                    roomName: roomName, members: membersList, owner: state.user.email);
 
                 String tempDocID;
                 await FirebaseController.addRoom(tempRoom)
@@ -268,8 +263,7 @@ class _Controller {
                 SizedBox(
                   width: 200.0,
                   child: Theme(
-                    data: Theme.of(context)
-                        .copyWith(primaryColor: Colors.red[800]),
+                    data: Theme.of(context).copyWith(primaryColor: Colors.red[800]),
                     child: TextFormField(
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -359,27 +353,24 @@ class _Controller {
     Navigator.pushNamed(state.context, MyPhotoScreen.routeName, arguments: {
       Constant.ARG_PHOTOMEMOLIST: state.photoMemoList,
       Constant.ARG_USERRECORD: state.userRecord,
+      Constant.ARG_ROOMLIST: state.roomList,
     });
   }
 
   void sharedWithMe() async {
     try {
       List<PhotoMemo> memosSharedWithMe =
-          await FirebaseController.getPhotoMemoSharedWithMe(
-              email: state.user.email);
+          await FirebaseController.getPhotoMemoSharedWithMe(email: state.user.email);
 
-      await Navigator.pushNamed(state.context, SharedWithScreen.routeName,
-          arguments: {
-            Constant.ARG_USER: state.user,
-            Constant.ARG_USERRECORD: state.userRecord,
-            Constant.ARG_PHOTOMEMOLIST:
-                memosSharedWithMe, // list of shared with email we retrieved
-          });
+      await Navigator.pushNamed(state.context, SharedWithScreen.routeName, arguments: {
+        Constant.ARG_USER: state.user,
+        Constant.ARG_USERRECORD: state.userRecord,
+        Constant.ARG_PHOTOMEMOLIST:
+            memosSharedWithMe, // list of shared with email we retrieved
+      });
     } catch (e) {
       MyDialog.info(
-          context: state.context,
-          title: 'Get Shared PhotoMemo Error',
-          content: '$e');
+          context: state.context, title: 'Get Shared PhotoMemo Error', content: '$e');
     }
   }
 
@@ -403,9 +394,7 @@ class _Controller {
       });
     } catch (e) {
       MyDialog.info(
-          context: state.context,
-          title: 'Delete PhotoMemo Error',
-          content: '$e');
+          context: state.context, title: 'Delete PhotoMemo Error', content: '$e');
     }
   }
 
@@ -432,13 +421,11 @@ class _Controller {
           searchLabels: searchKeys,
         );
       } else {
-        results =
-            await FirebaseController.getPhotoMemoList(email: state.user.email);
+        results = await FirebaseController.getPhotoMemoList(email: state.user.email);
       }
       state.render(() => state.photoMemoList = results);
     } catch (e) {
-      MyDialog.info(
-          context: state.context, title: 'Search Error', content: '$e');
+      MyDialog.info(context: state.context, title: 'Search Error', content: '$e');
     }
   }
 
